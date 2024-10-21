@@ -36,8 +36,7 @@
     "lint": "eslint --ignore-path .gitignore . --ext .js,.mjs,cjs,.ts,.mts",
     "lint:fix": "npm run lint -- --fix",
     "lint:yaml": "chmod +x scripts/lint_yaml.sh && ./scripts/lint_yaml.sh",
-    "build:clean": "rimraf dist; exit 0",
-    "typos": "chmod +x scripts/check_typos.sh && ./scripts/check_typos.sh"
+    "build:clean": "rimraf dist; exit 0"
   },
   "dependencies": {
     "@nestjs/cli": "^10.4.5",
