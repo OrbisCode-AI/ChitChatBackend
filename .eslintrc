@@ -28,7 +28,8 @@
       { "ignores": ["modules"] }
     ],
     "node/no-unpublished-import": "off",
-    "no-process-exit": "off"
+    "no-process-exit": "off",
+    "comma-dangle": ["error", "always-multiline"]
   },
   "overrides": [
     {
@@ -41,7 +42,12 @@
               [
                 "^(assert|buffer|child_process|cluster|console|constants|crypto|dgram|dns|domain|events|fs|http|https|module|net|os|path|punycode|querystring|readline|repl|stream|string_decoder|sys|timers|tls|tty|url|util|vm|zlib|freelist|v8|process|async_hooks|http2|perf_hooks)(/.*|$)"
               ],
-              ["^node:.*\\u0000$", "^@?\\w.*\\u0000$", "^[^.].*\\u0000$", "^\\..*\\u0000$"],
+              [
+                "^node:.*\\u0000$",
+                "^@?\\w.*\\u0000$",
+                "^[^.].*\\u0000$",
+                "^\\..*\\u0000$"
+              ],
               ["^\\u0000"],
               ["^node:"],
               ["^@?\\w"],

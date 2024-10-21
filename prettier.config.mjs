@@ -4,10 +4,10 @@ const config = {
   useTabs: false,
   semi: true,
   singleQuote: false,
-  trailingComma: "all",
+  trailingComma: "es5",
   bracketSpacing: true,
   arrowParens: "avoid",
-  endOfLine: "auto",
+  endOfLine: "lf",
 };
 
 export default config;
