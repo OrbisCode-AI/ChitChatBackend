@@ -21,7 +21,7 @@ async function bootstrap() {
 
   app.setGlobalPrefix("api");
   const configService = app.get(ConfigService);
-  const port = configService.get<string>("PORT", "3000");
+  const port = configService.get<string>("PORT", "4432");
 
   const config = new DocumentBuilder()
     .setTitle("ChitChat Microservice")
@@ -33,7 +33,7 @@ async function bootstrap() {
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup("api", app, documentFactory);
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(port, "0.0.0.0");
 
   const logger = app.get(Logger);
   logger.log(`App is ready and listening on port ${port} 🚀`);
