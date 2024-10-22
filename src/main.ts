@@ -9,11 +9,15 @@ import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 
 import { AppModule } from "@/app/app.module";
 
+import { initializeClients } from "./utils/models";
+
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter(),
   );
+
+  initializeClients(app.get(ConfigService));
 
   app.setGlobalPrefix("api");
   const configService = app.get(ConfigService);
