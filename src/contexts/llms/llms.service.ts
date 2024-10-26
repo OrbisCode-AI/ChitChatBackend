@@ -62,6 +62,25 @@ export class LlmsService {
     return result;
   }
 
+  async generateFriendSummary(friendsData: FriendsData): Promise<string> {
+    await this.handleCacheFull();
+
+    const jobData = {
+      friendsData,
+    };
+
+    const job = await this.generateQueue.add("generateFriendSummary", jobData, {
+      attempts: 3,
+      backoff: {
+        type: "exponential",
+        delay: 1000,
+      },
+    });
+
+    const result = (await job.finished()) as string;
+    return result;
+  }
+
   async clearCache(): Promise<void> {
     // Remove completed jobs
     await this.generateQueue.clean(0, "completed");

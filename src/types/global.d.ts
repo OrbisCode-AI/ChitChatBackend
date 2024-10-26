@@ -23,6 +23,10 @@ declare global {
     user: User;
     activeFriends: AiFriend[];
   }
+
+  interface FriendsData {
+    friends: AiFriend[];
+  }
 }
 
 export {};
