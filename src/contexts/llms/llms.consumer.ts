@@ -2,6 +2,7 @@ import { OnQueueActive, Process, Processor } from "@nestjs/bull";
 import { Logger } from "@nestjs/common";
 import { Job } from "bull";
 
+import { systemPromptFriendSummary } from "@/src/prompts/friendsummary";
 import { systemPromptMessageRoute } from "@/src/prompts/messageroute";
 import {
   systemPromptGeneral,
@@ -200,5 +201,28 @@ Based on the provided information, determine which 1-3 friends should respond to
         .slice(0, Math.floor(Math.random() * 3) + 1)
         .map((f) => f.name);
     }
+  }
+
+  @Process("generateFriendSummary")
+  async handleGenerateFriendSummary(job: Job) {
+    this.logger.debug(`Processing job ${job.id} of type ${job.name}`);
+
+    const { friendsData } = job.data as { friendsData: FriendsData };
+    const aiFriends = friendsData.friends;
+
+    const friendsInfo = aiFriends.map(
+      (friend) => `${friend.name}: ${friend.persona}, about: ${friend.about}`,
+    );
+    const systemPrompt = systemPromptFriendSummary;
+    const userPrompt = `AI Friends:\n${friendsInfo.join(
+      "\n",
+    )}\n\nPlease provide a brief summary of these AI friends, highlighting their key characteristics and how they might interact in a group chat.`;
+
+    let summary = await unifyAgentChat(userPrompt, systemPrompt);
+    if (summary === "I am busy now, I will respond later.") {
+      summary = await openaiChat(userPrompt, systemPrompt);
+    }
+
+    return summary;
   }
 }

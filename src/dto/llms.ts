@@ -95,3 +95,28 @@ export class MessageRouterDto {
   })
   routerData!: RouterData;
 }
+
+export class GenerateFriendSummaryDto {
+  @IsObject()
+  @IsNotEmpty()
+  @ApiProperty({
+    description: "Friends data",
+    example: {
+      friends: [
+        {
+          name: "John",
+          persona: "A helpful assistant",
+          about: "I am a helpful assistant",
+          knowledge_base: "I know a lot of things",
+        },
+        {
+          name: "Alice",
+          persona: "A friendly AI",
+          about: "I am a friendly AI",
+          knowledge_base: "I have extensive knowledge on various topics",
+        },
+      ],
+    },
+  })
+  friendsData!: FriendsData;
+}
