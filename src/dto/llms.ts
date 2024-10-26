@@ -56,3 +56,42 @@ export class AiFriendResponseDto {
   })
   lastConversation!: string[];
 }
+
+export class MessageRouterDto {
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    description: "Message content",
+    example: "Hello, how are you?",
+  })
+  message!: string;
+
+  @IsObject()
+  @IsNotEmpty()
+  @ApiProperty({
+    description: "Router data containing user and active friends information",
+    example: {
+      user: {
+        name: "Jane",
+        persona: "A curious user",
+        about: "I am a curious user",
+        knowledge_base: "I know a lot of things",
+      },
+      activeFriends: [
+        {
+          name: "John",
+          persona: "A helpful assistant",
+          about: "I am a helpful assistant",
+          knowledge_base: "I know a lot of things",
+        },
+        {
+          name: "Alice",
+          persona: "A friendly AI",
+          about: "I am a friendly AI",
+          knowledge_base: "I have extensive knowledge on various topics",
+        },
+      ],
+    },
+  })
+  routerData!: RouterData;
+}

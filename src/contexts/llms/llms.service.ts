@@ -12,10 +12,6 @@ export class LlmsService {
     private configService: ConfigService,
   ) {}
 
-  getHello(): string {
-    return "Hello World";
-  }
-
   async aiFriendResponse(
     userPrompt: string,
     dataObject: DataObject,
@@ -42,6 +38,26 @@ export class LlmsService {
     });
 
     // Wait for the job to complete and return the result
+    const result = (await job.finished()) as string;
+    return result;
+  }
+
+  async messageRouter(message: string, routerData: RouterData) {
+    await this.handleCacheFull();
+
+    const jobData = {
+      message,
+      routerData,
+    };
+
+    const job = await this.generateQueue.add("messageRoute", jobData, {
+      attempts: 3,
+      backoff: {
+        type: "exponential",
+        delay: 1000,
+      },
+    });
+
     const result = (await job.finished()) as string;
     return result;
   }

@@ -61,40 +61,54 @@ export async function unifyAgentChatWithResponseFormat(
   systemPrompt: string,
   responseFormat: string,
 ): Promise<string> {
-  const response = await fetch("https://api.unify.ai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.UNIFY_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini@openai",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      max_tokens: 150,
-      temperature: 1,
-      stream: false,
-      frequency_penalty: 1.5,
-      n: 1,
-      drop_params: true,
-      response_format: {
-        type: "json_schema",
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        json_schema: JSON.parse(responseFormat),
+  try {
+    const unifyUrl = process.env.UNIFY_BASE_URL;
+    const unifyApiKey = process.env.UNIFY_API_KEY;
+    if (!unifyUrl || !unifyApiKey) {
+      throw new Error("Unify URL or API key is not set");
+    }
+    const response = await fetch(unifyUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${unifyApiKey}`,
       },
-    }),
-  });
+      body: JSON.stringify({
+        model: "gpt-4o-mini@openai",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        max_tokens: 150,
+        temperature: 1,
+        stream: false,
+        frequency_penalty: 1.5,
+        n: 1,
+        drop_params: true,
+        response_format: {
+          type: "json_schema",
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          json_schema: JSON.parse(responseFormat),
+        },
+      }),
+    });
 
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = (await response.json()) as {
+      choices: Array<{ message: { content: string } }>;
+    };
+    return data.choices[0].message.content;
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(
+      "[LlmsConsumer] Error in unifyAgentChatWithResponseFormat:",
+      error,
+    );
+    throw error;
   }
-
-  const data = (await response.json()) as {
-    choices: Array<{ message: { content: string } }>;
-  };
-  return data.choices[0].message.content;
 }
 
 export async function openaiChat(
