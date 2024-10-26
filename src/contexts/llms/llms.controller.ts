@@ -2,7 +2,7 @@ import { Body, Controller, Get, Post } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { SkipThrottle } from "@nestjs/throttler";
 
-import { AiFriendResponseDto } from "../../dto/llms";
+import { AiFriendResponseDto, MessageRouterDto } from "../../dto/llms";
 import { LlmsService } from "./llms.service";
 
 @ApiBearerAuth()
@@ -10,12 +10,6 @@ import { LlmsService } from "./llms.service";
 @Controller("llms")
 export class LlmsController {
   constructor(private readonly llmsService: LlmsService) {}
-
-  @ApiTags("LLM")
-  @Get()
-  getHello() {
-    return this.llmsService.getHello();
-  }
 
   @ApiTags("LLM")
   @Post("ai-friend-response")
@@ -27,6 +21,12 @@ export class LlmsController {
       body.sessionDescription,
       body.lastConversation,
     );
+  }
+
+  @ApiTags("LLM")
+  @Post("message-router")
+  messageRouter(@Body() body: MessageRouterDto) {
+    return this.llmsService.messageRouter(body.message, body.routerData);
   }
 
   @ApiTags("Redis")

@@ -18,6 +18,11 @@ declare global {
     user: User;
     friendsSummary: string;
   }
+
+  interface RouterData {
+    user: User;
+    activeFriends: AiFriend[];
+  }
 }
 
 export {};

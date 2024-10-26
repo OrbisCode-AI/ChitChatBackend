@@ -2,6 +2,7 @@ import { OnQueueActive, Process, Processor } from "@nestjs/bull";
 import { Logger } from "@nestjs/common";
 import { Job } from "bull";
 
+import { systemPromptMessageRoute } from "@/src/prompts/messageroute";
 import {
   systemPromptGeneral,
   systemPromptResearchCreateMode,
@@ -11,6 +12,7 @@ import {
   llamaVisionChat,
   openaiChat,
   unifyAgentChat,
+  unifyAgentChatWithResponseFormat,
 } from "@/src/utils/models";
 
 import { GENERATE_QUEUE } from "../shared/contants";
@@ -22,11 +24,6 @@ export class LlmsConsumer {
   @OnQueueActive()
   onActive(job: Job) {
     this.logger.debug(`Processing job ${job.id} of type ${job.name}`);
-  }
-
-  @Process("transcode")
-  transcode(job: Job) {
-    this.logger.debug(job.data);
   }
 
   @Process("aiFriendResponse")
@@ -107,5 +104,101 @@ export class LlmsConsumer {
     }
 
     return response || "I am busy now, I will respond later.";
+  }
+
+  @Process("messageRoute")
+  async handleMessageRoute(job: Job) {
+    // console.log("Handling messageRoute job:", job.id);
+    this.logger.debug(`Processing job ${job.id} of type ${job.name}`);
+
+    const { message, routerData } = job.data as {
+      message: string;
+      routerData: RouterData;
+    };
+
+    return await this.routeMessage(
+      message,
+      routerData.user,
+      routerData.activeFriends,
+    );
+  }
+
+  private async routeMessage(
+    message: string,
+    user: User,
+    activeFriends: AiFriend[],
+  ): Promise<string[] | null> {
+    const systemPrompt = systemPromptMessageRoute;
+
+    const userPrompt = `
+User: ${user.name}
+User persona: ${user.persona}
+
+Active Friends:
+${activeFriends.map((f) => `- ${f.name} (${f.persona})`).join("\n")}
+
+Friend Profiles:
+${JSON.stringify(
+  activeFriends.map((f) => ({
+    name: f.name,
+    persona: f.persona,
+    about: f.about,
+  })),
+  undefined,
+  2,
+)}
+
+Latest Message: "${message}"
+
+Based on the provided information, determine which 1-3 friends should respond to this message. Consider the message content, the user's profile, and the friends' personalities and about. Provide your response as an array of friend names.`;
+
+    const jsonSchema = {
+      type: "object",
+      properties: {
+        friends: {
+          type: "array",
+          items: { type: "string" },
+        },
+      },
+      required: ["friends"],
+    };
+    const responseFormat = JSON.stringify({
+      schema: jsonSchema,
+      name: "respondingFriends",
+    });
+
+    try {
+      this.logger.debug("Calling unifyAgentChatWithResponseFormat");
+      const result = await unifyAgentChatWithResponseFormat(
+        userPrompt,
+        systemPrompt,
+        responseFormat,
+      );
+
+      this.logger.debug(
+        `Result from unifyAgentChatWithResponseFormat: ${result}`,
+      );
+
+      const parsedResult = JSON.parse(result) as { friends?: string[] };
+      if (parsedResult && Array.isArray(parsedResult.friends)) {
+        return parsedResult.friends;
+      }
+
+      throw new Error(
+        "Invalid response format from unifyAgentChatWithResponseFormat",
+      );
+    } catch (error) {
+      this.logger.error("Error in routeMessage:", error);
+      if (error instanceof Error) {
+        this.logger.error(`Error message: ${error.message}`);
+        this.logger.error(`Error stack: ${error.stack}`);
+      }
+      // Fallback logic
+      this.logger.warn("Using fallback logic to select friends");
+      return activeFriends
+        .sort(() => 0.5 - Math.random())
+        .slice(0, Math.floor(Math.random() * 3) + 1)
+        .map((f) => f.name);
+    }
   }
 }
