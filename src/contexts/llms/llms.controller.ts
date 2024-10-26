@@ -7,16 +7,17 @@ import { LlmsService } from "./llms.service";
 
 @ApiBearerAuth()
 @SkipThrottle()
-@ApiTags("LLMs")
 @Controller("llms")
 export class LlmsController {
   constructor(private readonly llmsService: LlmsService) {}
 
+  @ApiTags("LLM")
   @Get()
   getHello() {
     return this.llmsService.getHello();
   }
 
+  @ApiTags("LLM")
   @Post("ai-friend-response")
   aiFriendResponse(@Body() body: AiFriendResponseDto) {
     return this.llmsService.aiFriendResponse(
@@ -26,5 +27,40 @@ export class LlmsController {
       body.sessionDescription,
       body.lastConversation,
     );
+  }
+
+  @ApiTags("Redis")
+  @Post("clear-cache")
+  async clearCache() {
+    await this.llmsService.clearCache();
+    return { message: "Cache cleared successfully" };
+  }
+
+  @ApiTags("Redis")
+  @Post("clear-completed-jobs")
+  async clearCompletedJobs() {
+    await this.llmsService.clearCompletedJobs();
+    return { message: "Completed jobs cleared successfully" };
+  }
+
+  @ApiTags("Redis")
+  @Post("clear-all-jobs")
+  async clearAllJobs() {
+    await this.llmsService.clearAllJobs();
+    return { message: "All jobs cleared successfully" };
+  }
+
+  @ApiTags("Redis")
+  @Get("queue-size")
+  async getQueueSize() {
+    const size = await this.llmsService.getQueueSize();
+    return { size };
+  }
+
+  @ApiTags("Redis")
+  @Post("handle-cache-full")
+  async handleCacheFull() {
+    await this.llmsService.handleCacheFull();
+    return { message: "Cache full situation handled" };
   }
 }

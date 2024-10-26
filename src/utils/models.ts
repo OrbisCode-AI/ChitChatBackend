@@ -20,11 +20,16 @@ export async function unifyAgentChat(
   userPrompt: string,
   systemPrompt: string,
 ): Promise<string> {
-  const response = await fetch("https://api.unify.ai/v1/chat/completions", {
+  const unifyUrl = process.env.UNIFY_BASE_URL;
+  const unifyApiKey = process.env.UNIFY_API_KEY;
+  if (!unifyUrl || !unifyApiKey) {
+    throw new Error("Unify URL or API key is not set");
+  }
+  const response = await fetch(unifyUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.UNIFY_API_KEY}`,
+      Authorization: `Bearer ${unifyApiKey}`,
     },
     body: JSON.stringify({
       model: "gpt-4o-mini@openai",
