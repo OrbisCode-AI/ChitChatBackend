@@ -28,7 +28,6 @@ export const chargeUser = async (input: {
   created: string;
 }) => {
   const { id, userId, tokens, model, type, created } = input;
-
   if (
     !process.env.OPEN_METER_SECRET ||
     !process.env.OPEN_METER_BASE_URL ||

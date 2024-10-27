@@ -10,9 +10,10 @@ ENV NODE_ENV=development
 
 COPY package*.json .
 
-RUN echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ".npmrc" && \
+RUN (echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ".npmrc" && \
     npm ci && \
-    rm -f .npmrc
+    rm -f .npmrc) || \
+    npm install
 
 COPY tsconfig*.json .
 COPY .swcrc .
@@ -27,9 +28,10 @@ FROM base AS build
 RUN apk update && apk add --no-cache dumb-init=1.2.5-r2
 
 COPY package*.json .
-RUN echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ".npmrc" && \
+RUN (echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ".npmrc" && \
     npm ci && \
-    rm -f .npmrc
+    rm -f .npmrc) || \
+    npm install
 
 COPY tsconfig*.json .
 COPY .swcrc .
