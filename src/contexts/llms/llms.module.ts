@@ -11,7 +11,10 @@ import { LlmsService } from "./llms.service";
   controllers: [LlmsController],
   providers: [LlmsService, LlmsConsumer],
   imports: [
-    ConfigModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: ".env",
+    }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
