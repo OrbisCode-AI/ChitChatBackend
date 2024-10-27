@@ -106,15 +106,18 @@ export class LlmsService {
 
   async handleCacheFull(): Promise<void> {
     const queueSize = await this.getQueueSize();
-    const maxQueueSize = 1000; // Adjust this value based on your needs
+    const maxQueueSize = this.configService.get<number>("MAX_QUEUE_SIZE", 1000);
 
     if (queueSize >= maxQueueSize) {
       await this.clearCompletedJobs();
 
-      // If still full, clear all jobs
-      if ((await this.getQueueSize()) >= maxQueueSize) {
+      if (await this.isQueueStillFull(maxQueueSize)) {
         await this.clearAllJobs();
       }
     }
+  }
+
+  private async isQueueStillFull(maxSize: number): Promise<boolean> {
+    return (await this.getQueueSize()) >= maxSize;
   }
 }

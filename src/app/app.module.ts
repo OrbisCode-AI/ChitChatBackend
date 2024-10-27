@@ -7,6 +7,7 @@ import { LoggerModule } from "@/shared/logger/logger.module";
 
 import { LlmsModule } from "@/contexts/llms/llms.module";
 import { UserModule } from "@/contexts/users/user.module";
+import { VectorModule } from "@/contexts/vector/vector.module";
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { UserModule } from "@/contexts/users/user.module";
     HealthModule,
     UserModule,
     LlmsModule,
+    VectorModule,
   ],
 })
 export class AppModule {}
