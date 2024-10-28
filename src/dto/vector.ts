@@ -7,6 +7,8 @@ export class AddDocumentsToVectorStoreDto {
   @ApiProperty({
     description: "Message content to be added to the vector store",
     example: "This is a sample message that will be added to the vector store.",
+    minLength: 1,
+    maxLength: 1000,
   })
   message!: string;
 
@@ -39,15 +41,17 @@ export class VectorSearchDto {
   @IsString()
   @IsNotEmpty()
   @ApiProperty({
-    description: "The search query",
+    description: "The search query to find relevant documents",
     example: "What is the capital of France?",
+    minLength: 3,
+    maxLength: 1000,
   })
   query!: string;
 
   @IsString()
   @IsNotEmpty()
   @ApiProperty({
-    description: "Unique identifier for the user",
+    description: "Unique identifier for the user performing the search",
     example: "user789012",
   })
   userId!: string;

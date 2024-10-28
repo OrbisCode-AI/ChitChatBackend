@@ -74,9 +74,12 @@ export class VectorService {
           { expireAt: 1 },
           { expireAfterSeconds: 0 },
         );
-        console.log("TTL index created for Docs collection");
+        this.logger.log("TTL index created for Docs collection");
       } catch (error) {
-        console.error("Error creating TTL index for Docs collection:", error);
+        this.logger.error(
+          "Error creating TTL index for Docs collection:",
+          error,
+        );
         throw new Error("Failed to create TTL index for Docs collection");
       }
 
@@ -133,11 +136,11 @@ export class VectorService {
     });
 
     const retrieverOutput = await retriever.invoke(query);
-    console.log("retrieverOutput", retrieverOutput);
+    this.logger.log("retrieverOutput", retrieverOutput);
     const docsContent = retrieverOutput
       .map((doc) => doc.pageContent)
       .join("\n");
-    console.log("docsContent", docsContent);
+    this.logger.log("docsContent", docsContent);
     return docsContent;
   }
 }
