@@ -16,6 +16,7 @@ import {
   unifyAgentChatWithResponseFormat,
 } from "@/src/utils/models";
 
+import { chargeUser } from "../../utils/openmetercost";
 import { GENERATE_QUEUE } from "../shared/contants";
 
 @Processor(GENERATE_QUEUE)
@@ -224,5 +225,36 @@ Based on the provided information, determine which 1-3 friends should respond to
     }
 
     return summary;
+  }
+
+  @Process("trackTokens")
+  async handleTokenTracking(job: Job) {
+    try {
+      await chargeUser(
+        job.data as {
+          id: string;
+          userId: string;
+          tokens: number;
+          model: string;
+          type: string;
+          created: string;
+        },
+      );
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      this.logger.log(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        `Tracked tokens for user: ${job.data.userId || "unknown"} ${
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          job.data.tokens || "unknown"
+        }`,
+      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(`Failed to track tokens: ${error.message}`);
+      } else {
+        this.logger.error("Failed to track tokens: Unknown error occurred");
+      }
+      throw error;
+    }
   }
 }

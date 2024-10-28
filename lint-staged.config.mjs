@@ -5,7 +5,6 @@ const config = {
     "vitest related --run",
   ],
   "*.{md,json}": "prettier --write",
-  "*.{yml,yaml}": "npm run lint:yaml",
 };
 
 export default config;

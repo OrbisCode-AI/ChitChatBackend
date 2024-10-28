@@ -1,0 +1,356 @@
+openapi: 3.0.0
+paths:
+  /api/health:
+    get:
+      operationId: HealthController_run
+      parameters: []
+      responses:
+        "200":
+          description: ""
+  /api/users:
+    get:
+      operationId: UserController_run
+      parameters: []
+      responses:
+        "200":
+          description: ""
+  /api/llms/ai-friend-response:
+    post:
+      operationId: LlmsController_aiFriendResponse
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiFriendResponseDto"
+      responses:
+        "201":
+          description: ""
+      security: &a1
+        - bearer: []
+      tags:
+        - LLM
+  /api/llms/message-router:
+    post:
+      operationId: LlmsController_messageRouter
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageRouterDto"
+      responses:
+        "201":
+          description: ""
+      security: *a1
+      tags:
+        - LLM
+  /api/llms/generate-friend-summary:
+    post:
+      operationId: LlmsController_generateFriendSummary
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateFriendSummaryDto"
+      responses:
+        "201":
+          description: ""
+      security: *a1
+      tags:
+        - LLM
+  /api/llms/clear-cache:
+    post:
+      operationId: LlmsController_clearCache
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      security: *a1
+      tags:
+        - Redis
+  /api/llms/clear-completed-jobs:
+    post:
+      operationId: LlmsController_clearCompletedJobs
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      security: *a1
+      tags:
+        - Redis
+  /api/llms/clear-all-jobs:
+    post:
+      operationId: LlmsController_clearAllJobs
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      security: *a1
+      tags:
+        - Redis
+  /api/llms/queue-size:
+    get:
+      operationId: LlmsController_getQueueSize
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      security: *a1
+      tags:
+        - Redis
+  /api/llms/handle-cache-full:
+    post:
+      operationId: LlmsController_handleCacheFull
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      security: *a1
+      tags:
+        - Redis
+  /api/vector/add-documents:
+    post:
+      operationId: VectorController_addDocumentsToVectorStore
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddDocumentsToVectorStoreDto"
+      responses:
+        "201":
+          description: ""
+      tags: &a2
+        - Vector
+      security: &a3
+        - bearer: []
+  /api/vector/vector-search:
+    post:
+      operationId: VectorController_vectorSearch
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VectorSearchDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a2
+      security: *a3
+info:
+  title: ChitChat Microservice
+  description: This is the ChitChat microservice which is responsible for the AI
+    chat functionality.
+  version: "1.0"
+  contact: {}
+tags: []
+servers: []
+components:
+  schemas:
+    AiFriend:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the AI friend
+          example: John
+        persona:
+          type: string
+          description: Persona of the AI friend
+          example: A helpful assistant
+        about:
+          type: string
+          description: About the AI friend
+          example: I am a helpful assistant
+        knowledge_base:
+          type: string
+          description: Knowledge base of the AI friend
+          example: I know a lot of things
+      required:
+        - name
+        - persona
+        - about
+        - knowledge_base
+    User:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the user
+          example: Jane
+        persona:
+          type: string
+          description: Persona of the user
+          example: A curious user
+        about:
+          type: string
+          description: About the user
+          example: I am a curious user
+        knowledge_base:
+          type: string
+          description: Knowledge base of the user
+          example: I know a lot of things
+      required:
+        - name
+        - persona
+        - about
+        - knowledge_base
+    DataObject:
+      type: object
+      properties:
+        aiFriend:
+          description: AI friend details
+          allOf:
+            - $ref: "#/components/schemas/AiFriend"
+        user:
+          description: User details
+          allOf:
+            - $ref: "#/components/schemas/User"
+        friendsSummary:
+          type: string
+          description: Summary of the friendship
+          example: A friendly AI and a human user
+      required:
+        - aiFriend
+        - user
+        - friendsSummary
+    AiFriendResponseDto:
+      type: object
+      properties:
+        userPrompt:
+          type: string
+          description: User prompt
+          example: let's discuss story
+        dataObject:
+          description: Data object
+          allOf:
+            - $ref: "#/components/schemas/DataObject"
+        sessionType:
+          type: string
+          description: Session type
+          enum:
+            - StoryMode
+            - General
+            - ResearchMode
+          example: StoryMode
+        sessionDescription:
+          type: string
+          description: Session description
+          example: A story about a cat
+        lastConversation:
+          description: Last conversation
+          example:
+            - Hello, how are you?
+            - I am fine, thank you.
+          type: array
+          items:
+            type: string
+      required:
+        - userPrompt
+        - dataObject
+        - sessionType
+        - sessionDescription
+        - lastConversation
+    RouterData:
+      type: object
+      properties:
+        user:
+          description: User details
+          allOf:
+            - $ref: "#/components/schemas/User"
+        activeFriends:
+          description: List of active friends
+          type: array
+          items:
+            $ref: "#/components/schemas/AiFriend"
+      required:
+        - user
+        - activeFriends
+    MessageRouterDto:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Message content
+          example: Hello, how are you?
+        routerData:
+          description: Router data containing user and active friends information
+          allOf:
+            - $ref: "#/components/schemas/RouterData"
+      required:
+        - message
+        - routerData
+    FriendsData:
+      type: object
+      properties:
+        friends:
+          description: List of friends
+          type: array
+          items:
+            $ref: "#/components/schemas/AiFriend"
+      required:
+        - friends
+    GenerateFriendSummaryDto:
+      type: object
+      properties:
+        friendsData:
+          description: Friends data
+          allOf:
+            - $ref: "#/components/schemas/FriendsData"
+      required:
+        - friendsData
+    AddDocumentsToVectorStoreDto:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Message content to be added to the vector store
+          example: This is a sample message that will be added to the vector store.
+          minLength: 1
+          maxLength: 1000
+        messageId:
+          type: string
+          description: Unique identifier for the message
+          example: msg123456
+        conversationId:
+          type: string
+          description: Unique identifier for the conversation
+          example: conv123456
+        userId:
+          type: string
+          description: Unique identifier for the user
+          example: user789012
+      required:
+        - message
+        - messageId
+        - conversationId
+        - userId
+    VectorSearchDto:
+      type: object
+      properties:
+        query:
+          type: string
+          description: The search query to find relevant documents
+          example: What is the capital of France?
+          minLength: 3
+          maxLength: 1000
+        userId:
+          type: string
+          description: Unique identifier for the user performing the search
+          example: user789012
+        conversationId:
+          type: string
+          description: Unique identifier for the conversation
+          example: conv123456
+      required:
+        - query
+        - userId
+        - conversationId

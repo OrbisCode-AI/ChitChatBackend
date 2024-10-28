@@ -2,7 +2,10 @@ import { InjectQueue } from "@nestjs/bull";
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import * as bull from "bull";
+// eslint-disable-next-line node/no-extraneous-import
+import { v4 as uuidv4 } from "uuid";
 
+import { models, type } from "../../utils/openmetercost";
 import { GENERATE_QUEUE } from "../shared/contants";
 
 @Injectable()
@@ -11,6 +14,30 @@ export class LlmsService {
     @InjectQueue(GENERATE_QUEUE) private readonly generateQueue: bull.Queue,
     private configService: ConfigService,
   ) {}
+
+  private async trackTokenUsage(
+    tokens: number,
+    model: string,
+    userId: string,
+    type: string,
+  ) {
+    const jobData = {
+      id: uuidv4(),
+      userId,
+      tokens,
+      model,
+      type,
+      created: new Date().toISOString(),
+    };
+
+    await this.generateQueue.add("trackTokens", jobData, {
+      attempts: 3,
+      backoff: {
+        type: "exponential",
+        delay: 1000,
+      },
+    });
+  }
 
   async aiFriendResponse(
     userPrompt: string,
@@ -37,8 +64,17 @@ export class LlmsService {
       },
     });
 
-    // Wait for the job to complete and return the result
     const result = (await job.finished()) as string;
+
+    // Track token usage (you'll need to implement proper token counting)
+    const estimatedTokens = Math.ceil((userPrompt.length + result.length) / 4);
+    await this.trackTokenUsage(
+      estimatedTokens,
+      models.gpt4,
+      "1223efgtv7r6c",
+      type.output,
+    );
+
     return result;
   }
 
@@ -106,15 +142,18 @@ export class LlmsService {
 
   async handleCacheFull(): Promise<void> {
     const queueSize = await this.getQueueSize();
-    const maxQueueSize = 1000; // Adjust this value based on your needs
+    const maxQueueSize = this.configService.get<number>("MAX_QUEUE_SIZE", 1000);
 
     if (queueSize >= maxQueueSize) {
       await this.clearCompletedJobs();
 
-      // If still full, clear all jobs
-      if ((await this.getQueueSize()) >= maxQueueSize) {
+      if (await this.isQueueStillFull(maxQueueSize)) {
         await this.clearAllJobs();
       }
     }
+  }
+
+  private async isQueueStillFull(maxSize: number): Promise<boolean> {
+    return (await this.getQueueSize()) >= maxSize;
   }
 }
