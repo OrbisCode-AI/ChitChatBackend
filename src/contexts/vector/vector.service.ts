@@ -24,16 +24,6 @@ export class VectorService {
     userId: string,
   ): Promise<string> {
     try {
-      const existingDoc = await this.docsModel.findOne({
-        "metadata.messageId": messageId,
-      });
-      if (existingDoc) {
-        this.logger.log(
-          `Document with messageId ${messageId} already exists in the database.`,
-        );
-        return messageId;
-      }
-
       const embeddings = new OpenAIEmbeddings({
         openAIApiKey: this.configService.get<string>("OPENAI_API_KEY"),
         modelName: "text-embedding-3-small",
@@ -42,13 +32,12 @@ export class VectorService {
       const vectorStore = new MongoDBAtlasVectorSearch(embeddings, {
         collection: this.docsModel.collection as unknown as Collection,
         indexName: "vector_index",
-        textKey: "pageContent",
+        textKey: "text",
         embeddingKey: "embedding",
       });
 
       const expirationTime = this.calculateExpirationTime();
       const documents = [
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
         new Document({
           pageContent: message,
           metadata: {
@@ -110,7 +99,7 @@ export class VectorService {
     const vectorStore = new MongoDBAtlasVectorSearch(embeddings, {
       collection: this.docsModel.collection as unknown as Collection,
       indexName: "vector_index",
-      textKey: "pageContent",
+      textKey: "text",
       embeddingKey: "embedding",
     });
 

@@ -83,6 +83,22 @@ class User {
 
 class DataObject {
   @ApiProperty({
+    description: "User ID",
+    example: "123",
+  })
+  @IsString()
+  @IsNotEmpty()
+  userId!: string;
+
+  @ApiProperty({
+    description: "Session ID",
+    example: "123",
+  })
+  @IsString()
+  @IsNotEmpty()
+  sessionId!: string;
+
+  @ApiProperty({
     description: "AI friend details",
     type: AiFriend,
   })

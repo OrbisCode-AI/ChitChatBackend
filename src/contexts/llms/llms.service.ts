@@ -7,12 +7,14 @@ import { v4 as uuidv4 } from "uuid";
 
 import { models, type } from "../../utils/openmetercost";
 import { GENERATE_QUEUE } from "../shared/contants";
+import { VectorService } from "../vector/vector.service";
 
 @Injectable()
 export class LlmsService {
   constructor(
     @InjectQueue(GENERATE_QUEUE) private readonly generateQueue: bull.Queue,
     private configService: ConfigService,
+    private vectorService: VectorService,
   ) {}
 
   private async trackTokenUsage(
@@ -48,12 +50,15 @@ export class LlmsService {
   ): Promise<string> {
     await this.handleCacheFull();
 
+    const messageId = uuidv4();
+
     const jobData = {
       userPrompt,
       dataObject,
       sessionType,
       sessionDescription,
       lastConversation,
+      messageId,
     };
 
     const job = await this.generateQueue.add("aiFriendResponse", jobData, {
@@ -66,12 +71,12 @@ export class LlmsService {
 
     const result = (await job.finished()) as string;
 
-    // Track token usage (you'll need to implement proper token counting)
+    // Track token usage
     const estimatedTokens = Math.ceil((userPrompt.length + result.length) / 4);
     await this.trackTokenUsage(
       estimatedTokens,
       models.gpt4,
-      "1223efgtv7r6c",
+      dataObject.userId,
       type.output,
     );
 

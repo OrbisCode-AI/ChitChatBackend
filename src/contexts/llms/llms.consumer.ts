@@ -18,10 +18,13 @@ import {
 
 import { chargeUser } from "../../utils/openmetercost";
 import { GENERATE_QUEUE } from "../shared/contants";
+import { VectorService } from "../vector/vector.service";
 
 @Processor(GENERATE_QUEUE)
 export class LlmsConsumer {
   private readonly logger = new Logger(LlmsConsumer.name);
+
+  constructor(private readonly vectorService: VectorService) {}
 
   @OnQueueActive()
   onActive(job: Job) {
@@ -37,75 +40,112 @@ export class LlmsConsumer {
       sessionType,
       sessionDescription,
       lastConversation,
+      messageId,
     } = job.data as {
       userPrompt: string;
       dataObject: DataObject;
       sessionType: string;
       sessionDescription: string;
       lastConversation: string[];
+      messageId: string;
     };
 
-    let systemPrompt: string;
-    switch (sessionType) {
-      case "General": {
-        systemPrompt = systemPromptGeneral
-          .replace("{aiFriendName}", dataObject.aiFriend.name)
-          .replace("{aiFriendPersona}", dataObject.aiFriend.persona || "")
-          .replace("{aiFriendAbout}", dataObject.aiFriend.about || "")
-          .replace(
-            "{aiFriendKnowledgeBase}",
-            dataObject.aiFriend.knowledge_base || "",
-          )
-          .replace("{userName}", dataObject.user.name)
-          .replace("{userPersona}", dataObject.user.persona || "")
-          .replace("{userAbout}", dataObject.user.about || "")
-          .replace("{userKnowledgeBase}", dataObject.user.knowledge_base || "")
-          .replace("{friendsSummary}", dataObject.friendsSummary)
-          .replace("{descriptionString}", sessionDescription)
-          .replace("{lastConversations}", lastConversation.join("\n"));
-        break;
-      }
-      case "StoryMode": {
-        systemPrompt = systemPromptStoryMode
-          .replace("{aiFriendName}", dataObject.aiFriend.name)
-          .replace("{descriptionString}", sessionDescription)
-          .replace("{friendsSummary}", dataObject.friendsSummary)
-          .replace("{lastConversations}", lastConversation.join("\n"));
-        break;
-      }
-      case "ResearchCreateMode": {
-        systemPrompt = systemPromptResearchCreateMode
-          .replace("{aiFriendName}", dataObject.aiFriend.name)
-          .replace("{descriptionString}", sessionDescription)
-          .replace("{aiFriendPersona}", dataObject.aiFriend.persona || "")
-          .replace("{aiFriendAbout}", dataObject.aiFriend.about || "")
-          .replace(
-            "{aiFriendKnowledgeBase}",
-            dataObject.aiFriend.knowledge_base || "",
-          )
-          .replace("{userName}", dataObject.user.name)
-          .replace("{friendsSummary}", dataObject.friendsSummary)
-          .replace("{lastConversations}", lastConversation.join("\n"));
-        break;
-      }
-      default: {
-        throw new Error("Invalid session type");
-      }
-    }
+    try {
+      // Search for relevant context in vector store
+      const relevantContext = await this.vectorService.vectorSearch(
+        userPrompt,
+        dataObject.userId,
+        dataObject.sessionId,
+      );
 
-    let response = await unifyAgentChat(userPrompt, systemPrompt);
+      // Add relevant context to the system prompt
+      let systemPrompt: string;
+      switch (sessionType) {
+        case "General": {
+          systemPrompt = systemPromptGeneral
+            .replace("{aiFriendName}", dataObject.aiFriend.name)
+            .replace("{aiFriendPersona}", dataObject.aiFriend.persona || "")
+            .replace("{aiFriendAbout}", dataObject.aiFriend.about || "")
+            .replace(
+              "{aiFriendKnowledgeBase}",
+              dataObject.aiFriend.knowledge_base || "",
+            )
+            .replace("{userName}", dataObject.user.name)
+            .replace("{userPersona}", dataObject.user.persona || "")
+            .replace("{userAbout}", dataObject.user.about || "")
+            .replace(
+              "{userKnowledgeBase}",
+              dataObject.user.knowledge_base || "",
+            )
+            .replace("{friendsSummary}", dataObject.friendsSummary)
+            .replace("{descriptionString}", sessionDescription)
+            .replace("{lastConversations}", lastConversation.join("\n"))
+            .replace("{relevantContext}", relevantContext);
+          break;
+        }
+        case "StoryMode": {
+          systemPrompt = systemPromptStoryMode
+            .replace("{aiFriendName}", dataObject.aiFriend.name)
+            .replace("{descriptionString}", sessionDescription)
+            .replace("{friendsSummary}", dataObject.friendsSummary)
+            .replace("{lastConversations}", lastConversation.join("\n"))
+            .replace("{relevantContext}", relevantContext);
+          break;
+        }
+        case "ResearchCreateMode": {
+          systemPrompt = systemPromptResearchCreateMode
+            .replace("{aiFriendName}", dataObject.aiFriend.name)
+            .replace("{descriptionString}", sessionDescription)
+            .replace("{aiFriendPersona}", dataObject.aiFriend.persona || "")
+            .replace("{aiFriendAbout}", dataObject.aiFriend.about || "")
+            .replace(
+              "{aiFriendKnowledgeBase}",
+              dataObject.aiFriend.knowledge_base || "",
+            )
+            .replace("{userName}", dataObject.user.name)
+            .replace("{friendsSummary}", dataObject.friendsSummary)
+            .replace("{lastConversations}", lastConversation.join("\n"))
+            .replace("{relevantContext}", relevantContext);
+          break;
+        }
+        default: {
+          throw new Error("Invalid session type");
+        }
+      }
 
-    if (!response || response === "I am busy now, I will respond later.") {
-      // Fallback to unifyAgentChat
-      response = await openaiChat(userPrompt, systemPrompt);
+      let response = await unifyAgentChat(userPrompt, systemPrompt);
 
       if (!response || response === "I am busy now, I will respond later.") {
-        // Fallback to llamaVisionChat
-        response = await llamaVisionChat(userPrompt, systemPrompt);
-      }
-    }
+        response = await openaiChat(userPrompt, systemPrompt);
 
-    return response || "I am busy now, I will respond later.";
+        if (!response || response === "I am busy now, I will respond later.") {
+          response = await llamaVisionChat(userPrompt, systemPrompt);
+        }
+      }
+
+      // Store the response in vector DB if we have a valid response
+      if (response && response !== "I am busy now, I will respond later.") {
+        try {
+          await this.vectorService.addDocumentsToVectorStore(
+            response,
+            dataObject.sessionId,
+            messageId,
+            dataObject.userId,
+          );
+        } catch (vectorError) {
+          this.logger.error(
+            "Error storing response in vector store:",
+            vectorError,
+          );
+          // Continue with the response even if vector store fails
+        }
+      }
+
+      return response || "I am busy now, I will respond later.";
+    } catch (error) {
+      this.logger.error("Error in handleAiFriendResponse:", error);
+      throw error;
+    }
   }
 
   @Process("messageRoute")
