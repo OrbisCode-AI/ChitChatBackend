@@ -2,18 +2,16 @@ import { Schema } from "mongoose";
 
 export const DocsSchema = new Schema(
   {
-    pageContent: String,
-    embedding: [Number],
+    text: { type: String, required: true },
+    embedding: { type: [Number], required: true },
     metadata: {
-      source: String,
-      userId: String,
-      conversationId: String,
-      messageId: { type: String, unique: true },
-      expireAt: { type: Date, expires: 0 },
+      source: { type: String, required: true },
+      userId: { type: String, required: true },
+      conversationId: { type: String, required: true },
+      messageId: { type: String, required: true },
+      expireAt: { type: Date, required: true, expires: 0 },
     },
   },
   { collection: "ChatHistory" },
 );
-
-DocsSchema.index({ "metadata.messageId": 1 }, { unique: true });
 DocsSchema.index({ "metadata.expireAt": 1 }, { expireAfterSeconds: 0 });

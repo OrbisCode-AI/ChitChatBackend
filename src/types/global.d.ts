@@ -14,6 +14,8 @@ declare global {
   }
 
   interface DataObject {
+    userId: string;
+    sessionId: string;
     aiFriend: AiFriend;
     user: User;
     friendsSummary: string;

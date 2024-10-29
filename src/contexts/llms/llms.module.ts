@@ -3,6 +3,7 @@ import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 
 import { GENERATE_QUEUE } from "../shared/contants";
+import { VectorModule } from "../vector/vector.module";
 import { LlmsConsumer } from "./llms.consumer";
 import { LlmsController } from "./llms.controller";
 import { LlmsService } from "./llms.service";
@@ -11,6 +12,7 @@ import { LlmsService } from "./llms.service";
   controllers: [LlmsController],
   providers: [LlmsService, LlmsConsumer],
   imports: [
+    VectorModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ".env",

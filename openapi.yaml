@@ -206,6 +206,14 @@ components:
     DataObject:
       type: object
       properties:
+        userId:
+          type: string
+          description: User ID
+          example: "123"
+        sessionId:
+          type: string
+          description: Session ID
+          example: "123"
         aiFriend:
           description: AI friend details
           allOf:
@@ -219,6 +227,8 @@ components:
           description: Summary of the friendship
           example: A friendly AI and a human user
       required:
+        - userId
+        - sessionId
         - aiFriend
         - user
         - friendsSummary
