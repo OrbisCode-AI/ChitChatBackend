@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
-import { APP_FILTER } from "@nestjs/core";
+import { APP_FILTER, APP_INTERCEPTOR } from "@nestjs/core";
 import { SentryGlobalFilter, SentryModule } from "@sentry/nestjs/setup";
 
 import { HealthModule } from "@/app/health/health.module";
@@ -10,6 +10,8 @@ import { LoggerModule } from "@/shared/logger/logger.module";
 import { LlmsModule } from "@/contexts/llms/llms.module";
 import { UserModule } from "@/contexts/users/user.module";
 import { VectorModule } from "@/contexts/vector/vector.module";
+
+import { SentryInterceptor } from "../interceptors/sentry.interceptor";
 
 @Module({
   imports: [
@@ -25,6 +27,10 @@ import { VectorModule } from "@/contexts/vector/vector.module";
     {
       provide: APP_FILTER,
       useClass: SentryGlobalFilter,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: SentryInterceptor,
     },
   ],
 })

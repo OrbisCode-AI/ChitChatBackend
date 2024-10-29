@@ -8,20 +8,22 @@ const environment = process.env.NODE_ENV || "development";
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
   environment,
-  integrations: [nodeProfilingIntegration()],
-  // Performance monitoring
+  integrations: [
+    nodeProfilingIntegration(),
+    // Enable automatic instrumentation and tracing
+    Sentry.httpIntegration(),
+  ],
+  // Enable tracing for all transactions with sampling
   tracesSampleRate: environment === "production" ? 0.1 : 1.0,
-  // Profiling sample rate
   profilesSampleRate: environment === "production" ? 0.1 : 1.0,
-  // Set maxBreadcrumbs to control memory usage
   maxBreadcrumbs: 50,
-  // Ignore certain errors
   ignoreErrors: [
     "ResizeObserver loop limit exceeded",
     "Network request failed",
   ],
-  // Add debug mode for non-production
   debug: environment !== "production",
-  // Add release information
   release: process.env.npm_package_version,
+  // Add transaction name configuration
+  autoSessionTracking: true,
+  enableTracing: true,
 });

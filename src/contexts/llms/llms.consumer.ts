@@ -9,6 +9,7 @@ import {
   systemPromptResearchCreateMode,
   systemPromptStoryMode,
 } from "@/src/prompts/response";
+import { findSimilar } from "@/src/utils/exa";
 import {
   llamaVisionChat,
   openaiChat,
@@ -36,6 +37,7 @@ export class LlmsConsumer {
     this.logger.debug(`Processing job ${job.id} of type ${job.name}`);
     const {
       userPrompt,
+      modeData,
       dataObject,
       sessionType,
       sessionDescription,
@@ -43,6 +45,7 @@ export class LlmsConsumer {
       messageId,
     } = job.data as {
       userPrompt: string;
+      modeData: ModeData;
       dataObject: DataObject;
       sessionType: string;
       sessionDescription: string;
@@ -62,7 +65,7 @@ export class LlmsConsumer {
       let systemPrompt: string;
       switch (sessionType) {
         case "General": {
-          systemPrompt = systemPromptGeneral
+          systemPrompt = systemPromptGeneral(modeData)
             .replace("{aiFriendName}", dataObject.aiFriend.name)
             .replace("{aiFriendPersona}", dataObject.aiFriend.persona || "")
             .replace("{aiFriendAbout}", dataObject.aiFriend.about || "")
@@ -84,7 +87,7 @@ export class LlmsConsumer {
           break;
         }
         case "StoryMode": {
-          systemPrompt = systemPromptStoryMode
+          systemPrompt = systemPromptStoryMode(modeData)
             .replace("{aiFriendName}", dataObject.aiFriend.name)
             .replace("{descriptionString}", sessionDescription)
             .replace("{friendsSummary}", dataObject.friendsSummary)
@@ -93,7 +96,7 @@ export class LlmsConsumer {
           break;
         }
         case "ResearchCreateMode": {
-          systemPrompt = systemPromptResearchCreateMode
+          systemPrompt = systemPromptResearchCreateMode(modeData)
             .replace("{aiFriendName}", dataObject.aiFriend.name)
             .replace("{descriptionString}", sessionDescription)
             .replace("{aiFriendPersona}", dataObject.aiFriend.persona || "")
@@ -113,6 +116,7 @@ export class LlmsConsumer {
         }
       }
 
+      console.log("systemPrompt", systemPrompt);
       let response = await unifyAgentChat(userPrompt, systemPrompt);
 
       if (!response || response === "I am busy now, I will respond later.") {
@@ -126,7 +130,6 @@ export class LlmsConsumer {
       // Store the response in vector DB if we have a valid response
       if (response && response !== "I am busy now, I will respond later.") {
         const message = `${dataObject.aiFriend.name}: ${response}`;
-        console.log("message", message);
         try {
           await this.vectorService.addDocumentsToVectorStore(
             message,
@@ -171,7 +174,7 @@ export class LlmsConsumer {
     message: string,
     user: User,
     activeFriends: AiFriend[],
-  ): Promise<string[] | null> {
+  ): Promise<{ friends: string[]; mode: string; webContent?: string } | null> {
     const systemPrompt = systemPromptMessageRoute;
 
     const userPrompt = `
@@ -192,9 +195,35 @@ ${JSON.stringify(
   2,
 )}
 
-Latest Message: "${message}"
+Previous Conversation History and Latest Message: ${message}
 
-Based on the provided information, determine which 1-3 friends should respond to this message. Consider the message content, the user's profile, and the friends' personalities and about. Provide your response as an array of friend names.`;
+Based on the provided information:
+1. Analyze the message content to determine if it requires:
+   - Current events or real-time information
+   - Internet research or fact-checking
+   - General knowledge or personal interaction
+
+2. Select 1-3 most appropriate friends to respond by considering:
+   - Message content and topic
+   - User's profile and interests
+   - Friends' personalities and expertise
+   - How well each friend could address the specific query
+
+3. Choose response mode:
+   - Use 'web' mode if the message:
+     * Asks about current events/news
+     * Requires fact-checking
+     * Needs up-to-date information
+     * Requests research-based answers
+   - Use 'normal' mode if the message:
+     * Is conversational/social
+     * Seeks opinions/perspectives
+     * Involves personal interaction
+     * Can be answered with existing knowledge
+
+Provide your response as an object with:
+- 'friends': Array of 1-3 friend names best suited to respond
+- 'mode': Either 'normal' or 'web' based on message requirements`;
 
     const jsonSchema = {
       type: "object",
@@ -203,12 +232,16 @@ Based on the provided information, determine which 1-3 friends should respond to
           type: "array",
           items: { type: "string" },
         },
+        mode: {
+          type: "string",
+          enum: ["normal", "web"],
+        },
       },
-      required: ["friends"],
+      required: ["friends", "mode"],
     };
     const responseFormat = JSON.stringify({
       schema: jsonSchema,
-      name: "respondingFriends",
+      name: "respondingFriendsAndMode",
     });
 
     try {
@@ -223,9 +256,32 @@ Based on the provided information, determine which 1-3 friends should respond to
         `Result from unifyAgentChatWithResponseFormat: ${result}`,
       );
 
-      const parsedResult = JSON.parse(result) as { friends?: string[] };
-      if (parsedResult && Array.isArray(parsedResult.friends)) {
-        return parsedResult.friends;
+      const parsedResult = JSON.parse(result) as {
+        friends: string[];
+        mode: string;
+      };
+
+      if (
+        parsedResult &&
+        Array.isArray(parsedResult.friends) &&
+        parsedResult.mode
+      ) {
+        let webContent = "no additional content";
+        if (parsedResult.mode === "web") {
+          const searchResult = await findSimilar(message, 2);
+          if (
+            searchResult &&
+            typeof searchResult === "object" &&
+            "summary" in searchResult
+          ) {
+            webContent = `Sources: ${JSON.stringify(
+              searchResult.sources,
+              undefined,
+              2,
+            )}\n\nWeb Content Summary: ${searchResult.summary as string}`;
+          }
+        }
+        return { ...parsedResult, webContent };
       }
 
       throw new Error(
@@ -238,11 +294,15 @@ Based on the provided information, determine which 1-3 friends should respond to
         this.logger.error(`Error stack: ${error.stack}`);
       }
       // Fallback logic
-      this.logger.warn("Using fallback logic to select friends");
-      return activeFriends
-        .sort(() => 0.5 - Math.random())
-        .slice(0, Math.floor(Math.random() * 3) + 1)
-        .map((f) => f.name);
+      this.logger.warn("Using fallback logic to select friends and mode");
+      return {
+        friends: activeFriends
+          .sort(() => 0.5 - Math.random())
+          .slice(0, Math.floor(Math.random() * 3) + 1)
+          .map((f) => f.name),
+        mode: "normal",
+        webContent: "no additional content",
+      };
     }
   }
 

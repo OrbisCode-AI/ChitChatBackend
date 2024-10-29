@@ -1588,7 +1588,7 @@
     "@sentry/types" "8.35.0"
     "@sentry/utils" "8.35.0"
 
-"@sentry/node@8.35.0":
+"@sentry/node@8.35.0", "@sentry/node@^8.35.0":
   version "8.35.0"
   resolved "https://registry.yarnpkg.com/@sentry/node/-/node-8.35.0.tgz#14ab7d77d5bcce649e571fa05b4efacb71811395"
   integrity sha512-B0FLOcZEfYe3CJ2t0l1N0HJcHXcIrLlGENQ2kf5HqR2zcOcOzRxyITJTSV5brCnmzVNgkz9PG8VWo3w0HXZQpA==
@@ -1650,7 +1650,7 @@
     detect-libc "^2.0.2"
     node-abi "^3.61.0"
 
-"@sentry/types@8.35.0":
+"@sentry/types@8.35.0", "@sentry/types@^8.35.0":
   version "8.35.0"
   resolved "https://registry.yarnpkg.com/@sentry/types/-/types-8.35.0.tgz#535c807800f7e378f61416f30177c0ef81b95012"
   integrity sha512-AVEZjb16MlYPifiDDvJ19dPQyDn0jlrtC1PHs6ZKO+Rzyz+2EX2BRdszvanqArldexPoU1p5Bn2w81XZNXThBA==

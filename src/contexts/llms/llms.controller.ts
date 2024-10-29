@@ -20,6 +20,7 @@ export class LlmsController {
   aiFriendResponse(@Body() body: AiFriendResponseDto) {
     return this.llmsService.aiFriendResponse(
       body.userPrompt,
+      body.modeData,
       body.dataObject,
       body.sessionType,
       body.sessionDescription,

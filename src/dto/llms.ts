@@ -123,6 +123,25 @@ class DataObject {
   friendsSummary!: string;
 }
 
+class ModeData {
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    description: "Mode of the model",
+    enum: ["web", "normal"],
+    example: "web",
+  })
+  mode!: "web" | "normal";
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    description: "Web content",
+    example: "This is a web page content about a cat",
+  })
+  webContent!: string;
+}
+
 class RouterData {
   @ApiProperty({
     description: "User details",
@@ -159,6 +178,14 @@ export class AiFriendResponseDto {
     example: "let's discuss story",
   })
   userPrompt!: string;
+
+  @IsObject()
+  @IsNotEmpty()
+  @ApiProperty({
+    description: "Model data",
+    type: ModeData,
+  })
+  modeData!: ModeData;
 
   @IsObject()
   @IsNotEmpty()

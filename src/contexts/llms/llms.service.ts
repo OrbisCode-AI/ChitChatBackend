@@ -43,6 +43,7 @@ export class LlmsService {
 
   async aiFriendResponse(
     userPrompt: string,
+    modeData: ModeData,
     dataObject: DataObject,
     sessionType: string,
     sessionDescription: string,
@@ -54,6 +55,7 @@ export class LlmsService {
 
     const jobData = {
       userPrompt,
+      modeData,
       dataObject,
       sessionType,
       sessionDescription,
