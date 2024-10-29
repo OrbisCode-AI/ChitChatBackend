@@ -9,7 +9,7 @@ import {
   systemPromptResearchCreateMode,
   systemPromptStoryMode,
 } from "@/src/prompts/response";
-import { findSimilar } from "@/src/utils/exa";
+import { findSimilar, getExaContents } from "@/src/utils/exa";
 import {
   llamaVisionChat,
   openaiChat,
@@ -267,7 +267,21 @@ Provide your response as an object with:
         parsedResult.mode
       ) {
         let webContent = "no additional content";
-        if (parsedResult.mode === "web") {
+
+        // Extract URLs from message using regex
+        const urlRegex =
+          // eslint-disable-next-line unicorn/better-regex, no-useless-escape
+          /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g;
+        const urls = message.match(urlRegex);
+
+        // Force mode to web if URLs are found
+        if (urls) {
+          parsedResult.mode = "web";
+          webContent = await getExaContents(urls);
+        } else if (
+          parsedResult.mode === "web" ||
+          message.toLowerCase().includes("search")
+        ) {
           const searchResult = await findSimilar(message, 2);
           if (
             searchResult &&
@@ -281,6 +295,7 @@ Provide your response as an object with:
             )}\n\nWeb Content Summary: ${searchResult.summary as string}`;
           }
         }
+
         console.log("webContent", webContent);
         console.log("parsedResult", parsedResult);
         return { ...parsedResult, webContent };

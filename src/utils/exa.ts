@@ -18,22 +18,38 @@ export const getExaContents = async (urls: string[]): Promise<string> => {
   const exa = new Exa(EXA_API_KEY);
 
   try {
-    const result = await exa.getContents(urls, {
+    // Filter out any invalid/undefined URLs
+    const validUrls = urls.filter((url) => url && typeof url === "string");
+
+    if (validUrls.length === 0) {
+      return "No valid URLs provided to analyze.";
+    }
+
+    const result = await exa.getContents(validUrls, {
       text: true,
     });
 
+    // Handle case where no results returned
+    if (!result?.results?.length) {
+      return "Could not extract content from provided URLs.";
+    }
+
     const content = result.results.map((item) => ({
-      text: item.text,
+      text: item.text || "", // Handle missing text
     }));
 
     const combinedText = content.map((item) => item.text).join("\n");
+
+    if (!combinedText.trim()) {
+      return "No text content found in the provided URLs.";
+    }
 
     const summary = await unifyAgentChat(
       combinedText,
       summariseWebSearchAccordingToExaQuery,
     );
 
-    return summary;
+    return summary || "Unable to generate summary of content.";
   } catch (error) {
     Logger.error("Error fetching Exa contents:", error);
     return "No relevant content found.";
