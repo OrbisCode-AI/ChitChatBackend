@@ -8,7 +8,12 @@ import {
 } from "../prompts/exaprompt";
 import { unifyAgentChat } from "./models";
 
-export const getExaContents = async (urls: string[]): Promise<string> => {
+export const getExaContents = async (
+  urls: string[],
+): Promise<{
+  sources: { url: string; title: string; publishedDate: string | undefined }[];
+  summary: string;
+}> => {
   const EXA_API_KEY = process.env.EXA_API_KEY;
 
   if (!EXA_API_KEY) {
@@ -18,25 +23,59 @@ export const getExaContents = async (urls: string[]): Promise<string> => {
   const exa = new Exa(EXA_API_KEY);
 
   try {
-    const result = await exa.getContents(urls, {
+    // Filter out any invalid/undefined URLs
+    const validUrls = urls.filter((url) => url && typeof url === "string");
+
+    if (validUrls.length === 0) {
+      return {
+        sources: [],
+        summary: "No valid URLs provided to analyze.",
+      };
+    }
+
+    const result = await exa.getContents(validUrls, {
       text: true,
     });
 
+    // Handle case where no results returned
+    if (!result?.results?.length) {
+      return {
+        sources: [],
+        summary: "Could not extract content from provided URLs.",
+      };
+    }
+
     const content = result.results.map((item) => ({
-      text: item.text,
+      text: item.text || "", // Handle missing text
     }));
 
     const combinedText = content.map((item) => item.text).join("\n");
+
+    const sources = result.results.map((item) => ({
+      url: item.url,
+      title: item.title || "Untitled",
+      publishedDate: item.publishedDate || undefined,
+    }));
+
+    if (!combinedText.trim()) {
+      return {
+        sources: [],
+        summary: "No text content found in the provided URLs.",
+      };
+    }
 
     const summary = await unifyAgentChat(
       combinedText,
       summariseWebSearchAccordingToExaQuery,
     );
 
-    return summary;
+    return { sources, summary };
   } catch (error) {
     Logger.error("Error fetching Exa contents:", error);
-    return "No relevant content found.";
+    return {
+      sources: [],
+      summary: "No relevant content found.",
+    };
   }
 };
 

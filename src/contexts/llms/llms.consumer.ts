@@ -9,7 +9,7 @@ import {
   systemPromptResearchCreateMode,
   systemPromptStoryMode,
 } from "@/src/prompts/response";
-import { findSimilar } from "@/src/utils/exa";
+import { findSimilar, getExaContents } from "@/src/utils/exa";
 import {
   llamaVisionChat,
   openaiChat,
@@ -116,7 +116,7 @@ export class LlmsConsumer {
         }
       }
 
-      console.log("systemPrompt", systemPrompt);
+      this.logger.log("systemPrompt", systemPrompt);
       let response = await unifyAgentChat(userPrompt, systemPrompt);
 
       if (!response || response === "I am busy now, I will respond later.") {
@@ -155,7 +155,7 @@ export class LlmsConsumer {
 
   @Process("messageRoute")
   async handleMessageRoute(job: Job) {
-    // console.log("Handling messageRoute job:", job.id);
+    // this.logger.log("Handling messageRoute job:", job.id);
     this.logger.debug(`Processing job ${job.id} of type ${job.name}`);
 
     const { message, routerData } = job.data as {
@@ -174,7 +174,9 @@ export class LlmsConsumer {
     message: string,
     user: User,
     activeFriends: AiFriend[],
-  ): Promise<{ friends: string[]; mode: string; webContent?: string } | null> {
+  ): Promise<
+    { friends: string[]; mode: string; webContent?: string } | undefined
+  > {
     const systemPrompt = systemPromptMessageRoute;
 
     const userPrompt = `
@@ -267,22 +269,64 @@ Provide your response as an object with:
         parsedResult.mode
       ) {
         let webContent = "no additional content";
-        if (parsedResult.mode === "web") {
-          const searchResult = await findSimilar(message, 2);
-          if (
-            searchResult &&
-            typeof searchResult === "object" &&
-            "summary" in searchResult
-          ) {
-            webContent = `Sources: ${JSON.stringify(
-              searchResult.sources,
-              undefined,
-              2,
-            )}\n\nWeb Content Summary: ${searchResult.summary as string}`;
+
+        // Extract URLs from message using regex
+        const urlRegex =
+          // eslint-disable-next-line unicorn/better-regex, no-useless-escape
+          /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g;
+        const urls = message.match(urlRegex);
+        this.logger.log("urls", urls);
+
+        // Force mode to web if URLs are found
+        const searchResult = {
+          sources: [] as {
+            url: string;
+            title: string;
+            publishedDate: string | undefined;
+          }[],
+          summary: "",
+        };
+
+        if (urls) {
+          parsedResult.mode = "web";
+          const exaResult = await getExaContents(urls);
+          if (exaResult && exaResult.sources.length > 0) {
+            Object.assign(searchResult, exaResult);
+            this.logger.log("searchResult from getExaContents", searchResult);
+          } else {
+            // Fallback to findSimilar if getExaContents fails or returns empty sources
+            const similarResult = await findSimilar(message, 2);
+            if (similarResult) {
+              Object.assign(searchResult, similarResult);
+              this.logger.log(
+                "searchResult from fallback findSimilar",
+                searchResult,
+              );
+            }
+          }
+        } else if (
+          parsedResult.mode === "web" ||
+          message.toLowerCase().includes("search")
+        ) {
+          const similarResult = await findSimilar(message, 2);
+          if (similarResult) {
+            Object.assign(searchResult, similarResult);
+            this.logger.log(
+              "searchResult from original findSimilar",
+              searchResult,
+            );
           }
         }
-        console.log("webContent", webContent);
-        console.log("parsedResult", parsedResult);
+
+        if (searchResult.sources.length > 0 || searchResult.summary) {
+          webContent = `Sources: ${JSON.stringify(
+            searchResult.sources,
+            undefined,
+            2,
+          )}\n\nWeb Content Summary: ${searchResult.summary}`;
+        }
+
+        this.logger.log("parsedResult", parsedResult);
         return { ...parsedResult, webContent };
       }
 
