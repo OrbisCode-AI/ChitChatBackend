@@ -281,6 +281,8 @@ Provide your response as an object with:
             )}\n\nWeb Content Summary: ${searchResult.summary as string}`;
           }
         }
+        console.log("webContent", webContent);
+        console.log("parsedResult", parsedResult);
         return { ...parsedResult, webContent };
       }
 
