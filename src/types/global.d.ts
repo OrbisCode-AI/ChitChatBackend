@@ -29,6 +29,11 @@ declare global {
   interface FriendsData {
     friends: AiFriend[];
   }
+
+  interface ModeData {
+    mode: "web" | "normal";
+    webContent: string;
+  }
 }
 
 export {};

@@ -155,6 +155,23 @@ tags: []
 servers: []
 components:
   schemas:
+    ModeData:
+      type: object
+      properties:
+        mode:
+          type: string
+          description: Mode of the model
+          enum:
+            - web
+            - normal
+          example: web
+        webContent:
+          type: string
+          description: Web content
+          example: This is a web page content about a cat
+      required:
+        - mode
+        - webContent
     AiFriend:
       type: object
       properties:
@@ -239,6 +256,10 @@ components:
           type: string
           description: User prompt
           example: let's discuss story
+        modeData:
+          description: Model data
+          allOf:
+            - $ref: "#/components/schemas/ModeData"
         dataObject:
           description: Data object
           allOf:
@@ -265,6 +286,7 @@ components:
             type: string
       required:
         - userPrompt
+        - modeData
         - dataObject
         - sessionType
         - sessionDescription
