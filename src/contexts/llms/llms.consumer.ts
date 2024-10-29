@@ -125,9 +125,11 @@ export class LlmsConsumer {
 
       // Store the response in vector DB if we have a valid response
       if (response && response !== "I am busy now, I will respond later.") {
+        const message = `${dataObject.aiFriend.name}: ${response}`;
+        console.log("message", message);
         try {
           await this.vectorService.addDocumentsToVectorStore(
-            response,
+            message,
             dataObject.sessionId,
             messageId,
             dataObject.userId,
