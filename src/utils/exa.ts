@@ -8,7 +8,12 @@ import {
 } from "../prompts/exaprompt";
 import { unifyAgentChat } from "./models";
 
-export const getExaContents = async (urls: string[]): Promise<string> => {
+export const getExaContents = async (
+  urls: string[],
+): Promise<{
+  sources: { url: string; title: string; publishedDate: string | undefined }[];
+  summary: string;
+}> => {
   const EXA_API_KEY = process.env.EXA_API_KEY;
 
   if (!EXA_API_KEY) {
@@ -22,7 +27,10 @@ export const getExaContents = async (urls: string[]): Promise<string> => {
     const validUrls = urls.filter((url) => url && typeof url === "string");
 
     if (validUrls.length === 0) {
-      return "No valid URLs provided to analyze.";
+      return {
+        sources: [],
+        summary: "No valid URLs provided to analyze.",
+      };
     }
 
     const result = await exa.getContents(validUrls, {
@@ -31,7 +39,10 @@ export const getExaContents = async (urls: string[]): Promise<string> => {
 
     // Handle case where no results returned
     if (!result?.results?.length) {
-      return "Could not extract content from provided URLs.";
+      return {
+        sources: [],
+        summary: "Could not extract content from provided URLs.",
+      };
     }
 
     const content = result.results.map((item) => ({
@@ -40,8 +51,17 @@ export const getExaContents = async (urls: string[]): Promise<string> => {
 
     const combinedText = content.map((item) => item.text).join("\n");
 
+    const sources = result.results.map((item) => ({
+      url: item.url,
+      title: item.title || "Untitled",
+      publishedDate: item.publishedDate || undefined,
+    }));
+
     if (!combinedText.trim()) {
-      return "No text content found in the provided URLs.";
+      return {
+        sources: [],
+        summary: "No text content found in the provided URLs.",
+      };
     }
 
     const summary = await unifyAgentChat(
@@ -49,10 +69,13 @@ export const getExaContents = async (urls: string[]): Promise<string> => {
       summariseWebSearchAccordingToExaQuery,
     );
 
-    return summary || "Unable to generate summary of content.";
+    return { sources, summary };
   } catch (error) {
     Logger.error("Error fetching Exa contents:", error);
-    return "No relevant content found.";
+    return {
+      sources: [],
+      summary: "No relevant content found.",
+    };
   }
 };
 
