@@ -120,8 +120,8 @@ export class VectorService {
       ];
 
       const textSplitter = new RecursiveCharacterTextSplitter({
-        chunkSize: 50,
-        chunkOverlap: 10,
+        chunkSize: 150,
+        chunkOverlap: 20,
       });
 
       const splitDocs = await textSplitter.splitDocuments(documents);
