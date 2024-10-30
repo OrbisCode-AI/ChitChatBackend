@@ -37,12 +37,13 @@ declare global {
   }
 
   interface DataInfo {
-    aiFriendId: string;
-    aiFriendName: string;
-    aiFriendPersona: string;
-    aiFriendAbout: string;
-    aiFriendKnowledgeBase: string;
-    friendsSummary: string;
+    aiFriends: {
+      aiFriendId: string;
+      aiFriendName: string;
+      aiFriendPersona: string;
+      aiFriendAbout: string;
+      aiFriendKnowledgeBase: string;
+    }[];
   }
 }
 

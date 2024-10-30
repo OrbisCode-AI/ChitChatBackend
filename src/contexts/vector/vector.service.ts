@@ -205,37 +205,40 @@ export class VectorService {
   // Create memory summary and store in vector DB
   async createMemorySummary(
     dataInfo: DataInfo,
+    friendsSummary: string,
     userId: string,
     conversationId: string,
     lastConversations: string,
   ): Promise<string> {
     try {
       // Replace placeholders in memory prompt template
-      const memoryPrompt = friendsMemory
-        .replace("{aiFriendName}", dataInfo.aiFriendName)
-        .replace("{aiFriendPersona}", dataInfo.aiFriendPersona)
-        .replace("{aiFriendAbout}", dataInfo.aiFriendAbout)
-        .replace("{aiFriendKnowledgeBase}", dataInfo.aiFriendKnowledgeBase)
-        .replace("{FriendsSummary}", dataInfo.friendsSummary);
+      for (const aiFriend of dataInfo.aiFriends) {
+        const memoryPrompt = friendsMemory
+          .replace("{aiFriendName}", aiFriend.aiFriendName)
+          .replace("{aiFriendPersona}", aiFriend.aiFriendPersona)
+          .replace("{aiFriendAbout}", aiFriend.aiFriendAbout)
+          .replace("{aiFriendKnowledgeBase}", aiFriend.aiFriendKnowledgeBase)
+          .replace("{FriendsSummary}", friendsSummary);
 
-      const inputPrompt = `
-      The Group Coversation : ${lastConversations}
-      `;
+        const inputPrompt = `
+        The Group Coversation : ${lastConversations}
+        `;
 
-      const memorySummary = await unifyAgentChat(inputPrompt, memoryPrompt);
+        const memorySummary = await unifyAgentChat(inputPrompt, memoryPrompt);
 
-      if (!memorySummary) {
-        throw new Error("Failed to generate memory summary");
+        if (!memorySummary) {
+          throw new Error("Failed to generate memory summary");
+        }
+
+        // Store in MongoDB in VectorDB
+        await this.addMemoryToVectorStore(
+          memorySummary,
+          conversationId, // Using conversationId
+          aiFriend.aiFriendId, // Using aiFriendId as friendId
+          `${aiFriend.aiFriendName}-${aiFriend.aiFriendId}-${Date.now()}`, // Generate unique message ID
+          userId, // Using userId
+        );
       }
-
-      // Store in MongoDB in VectorDB
-      await this.addMemoryToVectorStore(
-        memorySummary,
-        conversationId, // Using conversationId
-        dataInfo.aiFriendId, // Using aiFriendId as friendId
-        `${dataInfo.aiFriendName}-${dataInfo.aiFriendId}-${Date.now()}`, // Generate unique message ID
-        userId, // Using userId
-      );
       return "Successfully created memory summary";
     } catch (error) {
       this.logger.error("Error creating memory summary:", error);

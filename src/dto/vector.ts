@@ -49,19 +49,30 @@ export class CreateMemorySummaryDto {
   @ApiProperty({
     description: "Information about the AI friend and conversation context",
     example: {
-      aiFriendId: "ai123456",
-      aiFriendName: "Sophie",
-      aiFriendPersona:
-        "Friendly and empathetic AI assistant with a keen interest in psychology",
-      aiFriendAbout:
-        "Enjoys helping people, discussing emotions, and understanding human behavior",
-      aiFriendKnowledgeBase:
-        "Extensive knowledge of psychology, counseling techniques, and interpersonal dynamics",
-      friendsSummary:
-        "John is a software engineer who likes technical discussions. Maria is an artist who shares creative ideas.",
+      aiFriends: [
+        {
+          aiFriendId: "ai123456",
+          aiFriendName: "Sophie",
+          aiFriendPersona:
+            "Friendly and empathetic AI assistant with a keen interest in psychology",
+          aiFriendAbout:
+            "Enjoys helping people, discussing emotions, and understanding human behavior",
+          aiFriendKnowledgeBase:
+            "Extensive knowledge of psychology, counseling techniques, and interpersonal dynamics",
+        },
+      ],
     },
   })
   dataInfo!: DataInfo;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    description: "Summary of the friends",
+    example:
+      "John is a software engineer who likes technical discussions. Maria is an artist who shares creative ideas.",
+  })
+  friendsSummary!: string;
 
   @IsString()
   @IsNotEmpty()

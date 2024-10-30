@@ -43,6 +43,7 @@ export class VectorController {
   async createMemorySummary(@Body() body: CreateMemorySummaryDto) {
     return this.vectorService.createMemorySummary(
       body.dataInfo,
+      body.friendsSummary,
       body.userId,
       body.conversationId,
       body.lastConversations,
