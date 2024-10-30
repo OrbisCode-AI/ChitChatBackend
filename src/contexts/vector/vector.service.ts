@@ -211,6 +211,11 @@ export class VectorService {
     lastConversations: string,
   ): Promise<string> {
     try {
+      // Check if aiFriends exists and is an array
+      if (!dataInfo.aiFriends || !Array.isArray(dataInfo.aiFriends)) {
+        throw new Error("dataInfo.aiFriends must be an array");
+      }
+
       // Replace placeholders in memory prompt template
       for (const aiFriend of dataInfo.aiFriends) {
         const memoryPrompt = friendsMemory

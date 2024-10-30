@@ -359,10 +359,18 @@ components:
           example:
             user:
               name: Jane
-              persona: A curious user
-              about: I am a curious user
-              knowledge_base: I know a lot of things
-            friends: []
+              persona: A friendly and curious software developer
+              about: I love learning new technologies and discussing programming concepts
+              knowledge_base: Software development, web technologies, AI/ML
+            friends:
+              - name: TechBot
+                persona: An enthusiastic tech expert
+                about: Specialized in explaining complex technical concepts in simple terms
+                knowledge_base: Programming languages, system design, best practices
+              - name: CreativeAI
+                persona: An artistic and imaginative companion
+                about: Loves brainstorming creative solutions and thinking outside the box
+                knowledge_base: UI/UX design, creative writing, digital art
       required:
         - friendsData
     AddDocumentsToVectorStoreDto:
