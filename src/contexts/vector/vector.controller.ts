@@ -4,6 +4,8 @@ import { SkipThrottle } from "@nestjs/throttler";
 
 import {
   AddDocumentsToVectorStoreDto,
+  AddMemoryToVectorStoreDto,
+  CreateMemorySummaryDto,
   VectorSearchDto,
 } from "@/src/dto/vector";
 
@@ -23,6 +25,27 @@ export class VectorController {
       body.conversationId,
       body.messageId,
       body.userId,
+    );
+  }
+
+  @Post("add-memory")
+  async addMemoryToVectorStore(@Body() body: AddMemoryToVectorStoreDto) {
+    return this.vectorService.addMemoryToVectorStore(
+      body.MomoryContext,
+      body.conversationId,
+      body.friendId,
+      body.messageId,
+      body.userId,
+    );
+  }
+
+  @Post("create-memory-summary")
+  async createMemorySummary(@Body() body: CreateMemorySummaryDto) {
+    return this.vectorService.createMemorySummary(
+      body.dataInfo,
+      body.userId,
+      body.conversationId,
+      body.lastConversations,
     );
   }
 

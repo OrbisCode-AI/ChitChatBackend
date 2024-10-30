@@ -15,3 +15,20 @@ export const DocsSchema = new Schema(
   { collection: "ChatHistory" },
 );
 DocsSchema.index({ "metadata.expireAt": 1 }, { expireAfterSeconds: 0 });
+
+export const MemorySchema = new Schema(
+  {
+    text: { type: String, required: true },
+    embedding: { type: [Number], required: true },
+    metadata: {
+      source: { type: String, required: true },
+      userId: { type: String, required: true },
+      conversationId: { type: String, required: true },
+      friendId: { type: String, required: true },
+      messageId: { type: String, required: true },
+      expireAt: { type: Date, required: true, expires: 0 },
+    },
+  },
+  { collection: "FriendsMemory" },
+);
+DocsSchema.index({ "metadata.expireAt": 1 }, { expireAfterSeconds: 0 });

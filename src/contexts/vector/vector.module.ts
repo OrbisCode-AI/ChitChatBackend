@@ -3,7 +3,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { MongooseModule } from "@nestjs/mongoose";
 import atlasSearchPlugin from "mongoose-atlas-search";
 
-import { DocsSchema } from "./docs.schema";
+import { DocsSchema, MemorySchema } from "./docs.schema";
 import { VectorController } from "./vector.controller";
 import { VectorService } from "./vector.service";
 
@@ -29,6 +29,11 @@ import { VectorService } from "./vector.service";
               // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
               model: connection.model("ChatHistory", DocsSchema),
             });
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+            connection.plugin(atlasSearchPlugin.initialize, {
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+              model: connection.model("FriendsMemory", MemorySchema),
+            });
             // eslint-disable-next-line @typescript-eslint/no-unsafe-return
             return connection;
           },
@@ -38,6 +43,11 @@ import { VectorService } from "./vector.service";
     }),
     MongooseModule.forFeature([
       { name: "ChatHistory", schema: DocsSchema, collection: "ChatHistory" },
+      {
+        name: "FriendsMemory",
+        schema: MemorySchema,
+        collection: "FriendsMemory",
+      },
     ]),
   ],
   controllers: [VectorController],

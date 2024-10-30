@@ -160,16 +160,6 @@ class RouterData {
   activeFriends!: AiFriend[];
 }
 
-class FriendsData {
-  @ApiProperty({
-    description: "List of friends",
-    type: [AiFriend],
-  })
-  @IsArray()
-  @IsNotEmpty()
-  friends!: AiFriend[];
-}
-
 export class AiFriendResponseDto {
   @IsString()
   @IsNotEmpty()
@@ -244,7 +234,15 @@ export class GenerateFriendSummaryDto {
   @IsNotEmpty()
   @ApiProperty({
     description: "Friends data",
-    type: FriendsData,
+    example: {
+      user: {
+        name: "Jane",
+        persona: "A curious user",
+        about: "I am a curious user",
+        knowledge_base: "I know a lot of things",
+      },
+      friends: [],
+    },
   })
-  friendsData!: FriendsData;
+  friendsData!: FriendsInfo;
 }

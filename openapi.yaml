@@ -130,6 +130,36 @@ paths:
         - Vector
       security: &a3
         - bearer: []
+  /api/vector/add-memory:
+    post:
+      operationId: VectorController_addMemoryToVectorStore
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddMemoryToVectorStoreDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a2
+      security: *a3
+  /api/vector/create-memory-summary:
+    post:
+      operationId: VectorController_createMemorySummary
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMemorySummaryDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a2
+      security: *a3
   /api/vector/vector-search:
     post:
       operationId: VectorController_vectorSearch
@@ -320,23 +350,19 @@ components:
       required:
         - message
         - routerData
-    FriendsData:
-      type: object
-      properties:
-        friends:
-          description: List of friends
-          type: array
-          items:
-            $ref: "#/components/schemas/AiFriend"
-      required:
-        - friends
     GenerateFriendSummaryDto:
       type: object
       properties:
         friendsData:
+          type: object
           description: Friends data
-          allOf:
-            - $ref: "#/components/schemas/FriendsData"
+          example:
+            user:
+              name: Jane
+              persona: A curious user
+              about: I am a curious user
+              knowledge_base: I know a lot of things
+            friends: []
       required:
         - friendsData
     AddDocumentsToVectorStoreDto:
@@ -365,6 +391,73 @@ components:
         - messageId
         - conversationId
         - userId
+    AddMemoryToVectorStoreDto:
+      type: object
+      properties:
+        MomoryContext:
+          type: string
+          description: Message content to be added to the vector store
+          example: This is a sample message that will be added to the vector store.
+          minLength: 1
+          maxLength: 1000
+        messageId:
+          type: string
+          description: Unique identifier for the message
+          example: msg123456
+        friendId:
+          type: string
+          description: Unique Friend Id for the message
+          example: friend123456
+        conversationId:
+          type: string
+          description: Unique identifier for the conversation
+          example: conv123456
+        userId:
+          type: string
+          description: Unique identifier for the user
+          example: user789012
+      required:
+        - MomoryContext
+        - messageId
+        - friendId
+        - conversationId
+        - userId
+    CreateMemorySummaryDto:
+      type: object
+      properties:
+        dataInfo:
+          type: object
+          description: Information about the AI friend and conversation context
+          example:
+            aiFriendId: ai123456
+            aiFriendName: Sophie
+            aiFriendPersona: Friendly and empathetic AI assistant with a keen interest in
+              psychology
+            aiFriendAbout: Enjoys helping people, discussing emotions, and understanding
+              human behavior
+            aiFriendKnowledgeBase: Extensive knowledge of psychology, counseling techniques,
+              and interpersonal dynamics
+            friendsSummary: John is a software engineer who likes technical discussions.
+              Maria is an artist who shares creative ideas.
+        userId:
+          type: string
+          description: Unique identifier for the user
+          example: user789012
+        conversationId:
+          type: string
+          description: Unique identifier for the conversation
+          example: conv123456
+        lastConversations:
+          type: string
+          description: Recent conversation history to generate memory from
+          example: |-
+            User: How was your day?
+            Sophie: It was wonderful! I learned about quantum physics...
+      required:
+        - dataInfo
+        - userId
+        - conversationId
+        - lastConversations
     VectorSearchDto:
       type: object
       properties:

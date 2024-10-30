@@ -105,7 +105,7 @@ export class LlmsService {
     return result;
   }
 
-  async generateFriendSummary(friendsData: FriendsData): Promise<string> {
+  async generateFriendSummary(friendsData: FriendsInfo): Promise<string> {
     await this.handleCacheFull();
 
     const jobData = {

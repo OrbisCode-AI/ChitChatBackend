@@ -356,8 +356,13 @@ Provide your response as an object with:
   async handleGenerateFriendSummary(job: Job) {
     this.logger.debug(`Processing job ${job.id} of type ${job.name}`);
 
-    const { friendsData } = job.data as { friendsData: FriendsData };
+    const { friendsData, user } = job.data as {
+      friendsData: FriendsInfo;
+      user: User;
+    };
     const aiFriends = friendsData.friends;
+
+    const userInfo = `${user.name}: ${user.persona}, about: ${user.about}`;
 
     const friendsInfo = aiFriends.map(
       (friend) => `${friend.name}: ${friend.persona}, about: ${friend.about}`,
@@ -365,7 +370,7 @@ Provide your response as an object with:
     const systemPrompt = systemPromptFriendSummary;
     const userPrompt = `AI Friends:\n${friendsInfo.join(
       "\n",
-    )}\n\nPlease provide a brief summary of these AI friends, highlighting their key characteristics and how they might interact in a group chat.`;
+    )}\n\n and Main User Friend Info: ${userInfo}\n\nPlease provide a brief summary of these AI friends along with the main user friend, highlighting their key characteristics and how they might interact in a group chat.`;
 
     let summary = await unifyAgentChat(userPrompt, systemPrompt);
     if (summary === "I am busy now, I will respond later.") {

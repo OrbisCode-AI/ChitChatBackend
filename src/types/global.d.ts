@@ -26,13 +26,23 @@ declare global {
     activeFriends: AiFriend[];
   }
 
-  interface FriendsData {
+  interface FriendsInfo {
+    user: User;
     friends: AiFriend[];
   }
 
   interface ModeData {
     mode: "web" | "normal";
     webContent: string;
+  }
+
+  interface DataInfo {
+    aiFriendId: string;
+    aiFriendName: string;
+    aiFriendPersona: string;
+    aiFriendAbout: string;
+    aiFriendKnowledgeBase: string;
+    friendsSummary: string;
   }
 }
 
