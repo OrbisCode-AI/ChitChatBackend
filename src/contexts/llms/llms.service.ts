@@ -108,8 +108,13 @@ export class LlmsService {
   async generateFriendSummary(friendsData: FriendsInfo): Promise<string> {
     await this.handleCacheFull();
 
+    if (!friendsData?.friends || !Array.isArray(friendsData.friends)) {
+      throw new Error("Invalid friendsData: friends array is required");
+    }
+
     const jobData = {
       friendsData,
+      user: friendsData.user,
     };
 
     const job = await this.generateQueue.add("generateFriendSummary", jobData, {

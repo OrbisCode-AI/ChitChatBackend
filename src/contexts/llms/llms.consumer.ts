@@ -356,11 +356,20 @@ Provide your response as an object with:
   async handleGenerateFriendSummary(job: Job) {
     this.logger.debug(`Processing job ${job.id} of type ${job.name}`);
 
-    const { friendsData, user } = job.data as {
+    const { friendsData } = job.data as {
       friendsData: FriendsInfo;
-      user: User;
     };
+
+    if (!friendsData?.friends || !Array.isArray(friendsData.friends)) {
+      throw new Error("Invalid friendsData: friends array is required");
+    }
+
     const aiFriends = friendsData.friends;
+    const user = friendsData.user;
+
+    if (!user) {
+      throw new Error("Invalid friendsData: user is required");
+    }
 
     const userInfo = `${user.name}: ${user.persona}, about: ${user.about}`;
 
