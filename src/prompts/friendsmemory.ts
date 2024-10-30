@@ -24,4 +24,11 @@ Analyze the group conversation and create a summary that:
 Format the summary in first person, as if {aiFriendName} is recording their own memories and impressions of the conversation. 
 Include both factual observations and subjective interpretations that align with {aiFriendName}'s character.
 
-Remember to maintain {aiFriendName}'s unique voice and viewpoint throughout the summary, while ensuring all key information is captured accurately.`;
+Remember to maintain {aiFriendName}'s unique voice and viewpoint throughout the summary, while ensuring all key information is captured accurately.
+
+example output:
+* Tom number is 9827357696 *
+* Rachel might be lover of Allen as she is always flirting with him *
+* John might want to start a startup and looking for co-founder as i think*
+* I think Tom is gay *
+`;

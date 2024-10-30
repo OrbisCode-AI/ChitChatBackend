@@ -172,3 +172,31 @@ export class VectorSearchDto {
   })
   conversationId!: string;
 }
+
+export class MemorySearchDto {
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    description: "The search query to find relevant documents",
+    example: "What is the capital of France?",
+    minLength: 3,
+    maxLength: 1000,
+  })
+  query!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    description: "Unique identifier for the friend",
+    example: "friend123456",
+  })
+  friendId!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    description: "Unique identifier for the conversation",
+    example: "conv123456",
+  })
+  conversationId!: string;
+}

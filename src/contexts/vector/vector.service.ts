@@ -120,8 +120,8 @@ export class VectorService {
       ];
 
       const textSplitter = new RecursiveCharacterTextSplitter({
-        chunkSize: 1000,
-        chunkOverlap: 200,
+        chunkSize: 50,
+        chunkOverlap: 10,
       });
 
       const splitDocs = await textSplitter.splitDocuments(documents);
@@ -185,6 +185,53 @@ export class VectorService {
           },
           userId: {
             $eq: userId,
+          },
+          conversationId: {
+            $eq: conversationId,
+          },
+        },
+      },
+    });
+
+    const retrieverOutput = await retriever.invoke(query);
+    this.logger.log("retrieverOutput", retrieverOutput);
+    const docsContent = retrieverOutput
+      .map((doc) => doc.pageContent)
+      .join("\n");
+    this.logger.log("docsContent", docsContent);
+    return docsContent;
+  }
+
+  async memorySearch(
+    query: string,
+    friendId: string,
+    conversationId: string,
+  ): Promise<string> {
+    const embeddings = new OpenAIEmbeddings({
+      openAIApiKey: this.configService.get<string>("OPENAI_API_KEY"),
+      modelName: "text-embedding-3-small",
+    });
+
+    const vectorStore = new MongoDBAtlasVectorSearch(embeddings, {
+      collection: this.MessageModel.collection as unknown as Collection,
+      indexName: "memory_index",
+      textKey: "text",
+      embeddingKey: "embedding",
+    });
+
+    const retriever = vectorStore.asRetriever({
+      searchType: "mmr",
+      searchKwargs: {
+        fetchK: 4,
+        lambda: 0.1,
+      },
+      filter: {
+        preFilter: {
+          source: {
+            $eq: "FriendsMemory",
+          },
+          friendId: {
+            $eq: friendId,
           },
           conversationId: {
             $eq: conversationId,

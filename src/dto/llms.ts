@@ -99,6 +99,14 @@ class DataObject {
   sessionId!: string;
 
   @ApiProperty({
+    description: "AI friend ID",
+    example: "123",
+  })
+  @IsString()
+  @IsNotEmpty()
+  aiFriendId!: string;
+
+  @ApiProperty({
     description: "AI friend details",
     type: AiFriend,
   })

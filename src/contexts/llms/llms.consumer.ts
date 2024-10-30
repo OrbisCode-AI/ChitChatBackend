@@ -61,6 +61,12 @@ export class LlmsConsumer {
         dataObject.sessionId,
       );
 
+      const retrieveFriendsMemory = await this.vectorService.memorySearch(
+        userPrompt,
+        dataObject.aiFriendId,
+        dataObject.sessionId,
+      );
+
       // Add relevant context to the system prompt
       let systemPrompt: string;
       switch (sessionType) {
@@ -69,6 +75,7 @@ export class LlmsConsumer {
             .replace("{aiFriendName}", dataObject.aiFriend.name)
             .replace("{aiFriendPersona}", dataObject.aiFriend.persona || "")
             .replace("{aiFriendAbout}", dataObject.aiFriend.about || "")
+            .replace("{friendsMemory}", retrieveFriendsMemory)
             .replace(
               "{aiFriendKnowledgeBase}",
               dataObject.aiFriend.knowledge_base || "",
@@ -91,6 +98,7 @@ export class LlmsConsumer {
             .replace("{aiFriendName}", dataObject.aiFriend.name)
             .replace("{descriptionString}", sessionDescription)
             .replace("{friendsSummary}", dataObject.friendsSummary)
+            .replace("{friendsMemory}", retrieveFriendsMemory)
             .replace("{lastConversations}", lastConversation.join("\n"))
             .replace("{relevantContext}", relevantContext);
           break;
@@ -107,6 +115,7 @@ export class LlmsConsumer {
             )
             .replace("{userName}", dataObject.user.name)
             .replace("{friendsSummary}", dataObject.friendsSummary)
+            .replace("{friendsMemory}", retrieveFriendsMemory)
             .replace("{lastConversations}", lastConversation.join("\n"))
             .replace("{relevantContext}", relevantContext);
           break;

@@ -175,6 +175,21 @@ paths:
           description: ""
       tags: *a2
       security: *a3
+  /api/vector/memory-search:
+    post:
+      operationId: VectorController_memorySearch
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MemorySearchDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a2
+      security: *a3
 info:
   title: ChitChat Microservice
   description: This is the ChitChat microservice which is responsible for the AI
@@ -261,6 +276,10 @@ components:
           type: string
           description: Session ID
           example: "123"
+        aiFriendId:
+          type: string
+          description: AI friend ID
+          example: "123"
         aiFriend:
           description: AI friend details
           allOf:
@@ -276,6 +295,7 @@ components:
       required:
         - userId
         - sessionId
+        - aiFriendId
         - aiFriend
         - user
         - friendsSummary
@@ -491,4 +511,25 @@ components:
       required:
         - query
         - userId
+        - conversationId
+    MemorySearchDto:
+      type: object
+      properties:
+        query:
+          type: string
+          description: The search query to find relevant documents
+          example: What is the capital of France?
+          minLength: 3
+          maxLength: 1000
+        friendId:
+          type: string
+          description: Unique identifier for the friend
+          example: friend123456
+        conversationId:
+          type: string
+          description: Unique identifier for the conversation
+          example: conv123456
+      required:
+        - query
+        - friendId
         - conversationId

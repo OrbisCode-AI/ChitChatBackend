@@ -1,6 +1,7 @@
-import { Module } from "@nestjs/common";
+import { Logger, Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { MongooseModule } from "@nestjs/mongoose";
+import { Connection } from "mongoose";
 import atlasSearchPlugin from "mongoose-atlas-search";
 
 import { DocsSchema, MemorySchema } from "./docs.schema";
@@ -23,18 +24,46 @@ import { VectorService } from "./vector.service";
         return {
           uri,
           dbName: "Memory",
-          connectionFactory: (connection) => {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-            connection.plugin(atlasSearchPlugin.initialize, {
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-              model: connection.model("ChatHistory", DocsSchema),
+          connectionFactory: (connection: Connection) => {
+            // Define interfaces for the document types
+            interface IChatHistory {
+              text: string;
+              embedding: number[];
+              metadata: Record<string, unknown>;
+            }
+
+            interface IFriendsMemory {
+              text: string;
+              embedding: number[];
+              metadata: Record<string, unknown>;
+            }
+
+            // Create models with proper typing
+            const ChatHistory = connection.model<IChatHistory>(
+              "ChatHistory",
+              DocsSchema,
+            );
+
+            const FriendsMemory = connection.model<IFriendsMemory>(
+              "FriendsMemory",
+              MemorySchema,
+            );
+
+            // Add plugins with proper typing
+            connection.plugin((schema) => {
+              atlasSearchPlugin.initialize({
+                model: ChatHistory,
+              });
+              Logger.log("ChatHistory plugin applied", schema);
             });
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-            connection.plugin(atlasSearchPlugin.initialize, {
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-              model: connection.model("FriendsMemory", MemorySchema),
+
+            connection.plugin((schema) => {
+              atlasSearchPlugin.initialize({
+                model: FriendsMemory,
+              });
+              Logger.log("FriendsMemory plugin applied", schema);
             });
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+
             return connection;
           },
         };

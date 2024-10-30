@@ -6,6 +6,7 @@ import {
   AddDocumentsToVectorStoreDto,
   AddMemoryToVectorStoreDto,
   CreateMemorySummaryDto,
+  MemorySearchDto,
   VectorSearchDto,
 } from "@/src/dto/vector";
 
@@ -55,6 +56,15 @@ export class VectorController {
     return this.vectorService.vectorSearch(
       body.query,
       body.userId,
+      body.conversationId,
+    );
+  }
+
+  @Post("memory-search")
+  async memorySearch(@Body() body: MemorySearchDto) {
+    return this.vectorService.memorySearch(
+      body.query,
+      body.friendId,
       body.conversationId,
     );
   }

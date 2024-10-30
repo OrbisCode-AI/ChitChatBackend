@@ -19,7 +19,8 @@ import { LlmsService } from "./llms.service";
     }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
+      // eslint-disable-next-line @typescript-eslint/require-await
+      useFactory: async (configService: ConfigService) => ({
         redis: {
           host: configService.get<string>("REDIS_HOST"),
           port: configService.get<number>("REDIS_PORT"),
