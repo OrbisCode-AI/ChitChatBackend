@@ -163,7 +163,7 @@ export async function imageGen(prompt: string): Promise<string> {
 // const b64Image = await imageGen(
 //   'Create a realistic red dragon with blue-white flames from mouth'
 // );
-// console.log(b64Image);
+// this.logger.log(b64Image);
 export async function llamaVisionChat(
   userPrompt: string,
   systemPrompt: string,
@@ -201,7 +201,7 @@ export async function llamaVisionChat(
     messages: messages,
   });
 
-  // console.log(response);
+  // this.logger.log(response);
 
   return (
     response.choices[0]?.message?.content ||

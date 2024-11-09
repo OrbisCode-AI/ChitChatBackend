@@ -17,6 +17,15 @@ export class LlmsService {
     private vectorService: VectorService,
   ) {}
 
+  private activeRequests = new Map<string, Promise<string>>();
+  private userRequestCounts = new Map<
+    string,
+    { count: number; timestamp: number }
+  >();
+  // eslint-disable-next-line unicorn/numeric-separators-style
+  private readonly REQUEST_WINDOW = 60000; // 1 minute
+  private readonly MAX_REQUESTS = 10; // Max requests per minute
+
   private async trackTokenUsage(
     tokens: number,
     model: string,
@@ -41,7 +50,78 @@ export class LlmsService {
     });
   }
 
+  private checkRateLimit(userId: string): boolean {
+    const now = Date.now();
+    const userRequests = this.userRequestCounts.get(userId);
+
+    if (!userRequests || now - userRequests.timestamp > this.REQUEST_WINDOW) {
+      this.userRequestCounts.set(userId, { count: 1, timestamp: now });
+      return true;
+    }
+
+    if (userRequests.count >= this.MAX_REQUESTS) {
+      return false;
+    }
+
+    userRequests.count++;
+    return true;
+  }
+
+  private async ensureQueueHealth(): Promise<void> {
+    const queueSize = await this.getQueueSize();
+    const maxQueueSize = this.configService.get<number>("MAX_QUEUE_SIZE", 1000);
+
+    if (queueSize >= maxQueueSize * 0.8) {
+      // Start cleaning at 80% capacity
+      await this.clearCompletedJobs();
+    }
+
+    if (queueSize >= maxQueueSize) {
+      throw new Error("Queue is currently full. Please try again later.");
+    }
+  }
+
   async aiFriendResponse(
+    userPrompt: string,
+    modeData: ModeData,
+    dataObject: DataObject,
+    sessionType: string,
+    sessionDescription: string,
+    lastConversation: string[],
+  ): Promise<string> {
+    await this.ensureQueueHealth();
+
+    const requestKey = `${dataObject.userId}-${userPrompt}`;
+
+    if (this.activeRequests.has(requestKey)) {
+      return this.activeRequests.get(requestKey)!;
+    }
+
+    const userId = dataObject.userId;
+    if (!this.checkRateLimit(userId)) {
+      throw new Error("Rate limit exceeded. Please try again later.");
+    }
+
+    const responsePromise = this.processAiFriendResponse(
+      userPrompt,
+      modeData,
+      dataObject,
+      sessionType,
+      sessionDescription,
+      lastConversation,
+    );
+
+    this.activeRequests.set(requestKey, responsePromise);
+
+    try {
+      const result = await responsePromise;
+      return result;
+    } finally {
+      this.activeRequests.delete(requestKey);
+    }
+  }
+
+  private async processAiFriendResponse(
     userPrompt: string,
     modeData: ModeData,
     dataObject: DataObject,
@@ -139,12 +219,12 @@ export class LlmsService {
 
   async clearCompletedJobs(): Promise<void> {
     await this.generateQueue.clean(0, "completed");
-    // console.log("Completed jobs cleared successfully");
+    // this.logger.log("Completed jobs cleared successfully");
   }
 
   async clearAllJobs(): Promise<void> {
     await this.generateQueue.empty();
-    // console.log("All jobs cleared successfully");
+    // this.logger.log("All jobs cleared successfully");
   }
 
   async getQueueSize(): Promise<number> {

@@ -67,6 +67,13 @@ export class LlmsConsumer {
         dataObject.sessionId,
       );
 
+      const userQuery = `
+
+Continue the conversation accordingly to the Recent Chat History:
+${lastConversation.join("\n")} 
+
+${dataObject.aiFriend.name}: `;
+
       // Add relevant context to the system prompt
       let systemPrompt: string;
       switch (sessionType) {
@@ -90,7 +97,8 @@ export class LlmsConsumer {
             .replace("{friendsSummary}", dataObject.friendsSummary)
             .replace("{descriptionString}", sessionDescription)
             .replace("{lastConversations}", lastConversation.join("\n"))
-            .replace("{relevantContext}", relevantContext);
+            .replace("{relevantContext}", relevantContext)
+            .replace("{aiFriendName}", dataObject.aiFriend.name);
           break;
         }
         case "StoryMode": {
@@ -100,7 +108,8 @@ export class LlmsConsumer {
             .replace("{friendsSummary}", dataObject.friendsSummary)
             .replace("{friendsMemory}", retrieveFriendsMemory)
             .replace("{lastConversations}", lastConversation.join("\n"))
-            .replace("{relevantContext}", relevantContext);
+            .replace("{relevantContext}", relevantContext)
+            .replace("{aiFriendName}", dataObject.aiFriend.name);
           break;
         }
         case "ResearchCreateMode": {
@@ -117,22 +126,25 @@ export class LlmsConsumer {
             .replace("{friendsSummary}", dataObject.friendsSummary)
             .replace("{friendsMemory}", retrieveFriendsMemory)
             .replace("{lastConversations}", lastConversation.join("\n"))
-            .replace("{relevantContext}", relevantContext);
+            .replace("{relevantContext}", relevantContext)
+            .replace("{aiFriendName}", dataObject.aiFriend.name);
           break;
         }
         default: {
           throw new Error("Invalid session type");
         }
       }
+      this.logger.log("systemPrompt", systemPrompt);
+      this.logger.log("userQuery", userQuery);
 
       this.logger.log("systemPrompt", systemPrompt);
-      let response = await unifyAgentChat(userPrompt, systemPrompt);
+      let response = await unifyAgentChat(userQuery, systemPrompt);
 
       if (!response || response === "I am busy now, I will respond later.") {
-        response = await openaiChat(userPrompt, systemPrompt);
+        response = await openaiChat(userQuery, systemPrompt);
 
         if (!response || response === "I am busy now, I will respond later.") {
-          response = await llamaVisionChat(userPrompt, systemPrompt);
+          response = await llamaVisionChat(userQuery, systemPrompt);
         }
       }
 
@@ -171,6 +183,8 @@ export class LlmsConsumer {
       message: string;
       routerData: RouterData;
     };
+
+    this.logger.log("routerData", routerData);
 
     return await this.routeMessage(
       message,
@@ -236,6 +250,9 @@ Provide your response as an object with:
 - 'friends': Array of 1-3 friend names best suited to respond
 - 'mode': Either 'normal' or 'web' based on message requirements`;
 
+    this.logger.log("userPrompt", userPrompt);
+    this.logger.log("systemPrompt", systemPrompt);
+
     const jsonSchema = {
       type: "object",
       properties: {
@@ -263,7 +280,7 @@ Provide your response as an object with:
         responseFormat,
       );
 
-      this.logger.debug(
+      this.logger.log(
         `Result from unifyAgentChatWithResponseFormat: ${result}`,
       );
 
@@ -386,9 +403,11 @@ Provide your response as an object with:
       (friend) => `${friend.name}: ${friend.persona}, about: ${friend.about}`,
     );
     const systemPrompt = systemPromptFriendSummary;
-    const userPrompt = `AI Friends:\n${friendsInfo.join(
+    const userPrompt = `Friends:\n${friendsInfo.join(
       "\n",
-    )}\n\n and Main User Friend Info: ${userInfo}\n\nPlease provide a brief summary of these AI friends along with the main user friend, highlighting their key characteristics and how they might interact in a group chat.`;
+    )}\n\n and ${userInfo}.\n\n
+    Friends Summary:
+    `;
 
     let summary = await unifyAgentChat(userPrompt, systemPrompt);
     if (summary === "I am busy now, I will respond later.") {
