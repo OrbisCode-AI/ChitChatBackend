@@ -353,9 +353,14 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AiFriend"
+        friendsSummary:
+          type: string
+          description: Summary of the friendship
+          example: A friendly AI and a human user
       required:
         - user
         - activeFriends
+        - friendsSummary
     MessageRouterDto:
       type: object
       properties:

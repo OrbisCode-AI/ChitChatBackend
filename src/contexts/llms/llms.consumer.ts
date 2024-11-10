@@ -67,6 +67,41 @@ export class LlmsConsumer {
         dataObject.sessionId,
       );
 
+      this.logger.log("sessionDescription", sessionDescription);
+      const outerData = JSON.parse(sessionDescription) as {
+        description: string;
+      };
+
+      // Parse the inner 'description' JSON string
+      const innerData = JSON.parse(outerData.description) as {
+        title?: string;
+        description?: string;
+        session_type?: string;
+        charactersAndRelationships?: string;
+        teamMembers?: string;
+        projectDescription?: string;
+      };
+
+      let sessionText = "";
+      if (innerData.title && innerData.title !== "") {
+        sessionText += `Session Title: ${innerData.title}\n`;
+      }
+      if (innerData.description && innerData.description !== "") {
+        sessionText += `Session Description: ${innerData.description}`;
+      }
+      if (
+        innerData.charactersAndRelationships &&
+        innerData.charactersAndRelationships !== ""
+      ) {
+        sessionText += `Characters and Relationships: ${innerData.charactersAndRelationships}`;
+      }
+      if (innerData.teamMembers && innerData.teamMembers !== "") {
+        sessionText += `Team Members: ${innerData.teamMembers}`;
+      }
+      if (innerData.projectDescription && innerData.projectDescription !== "") {
+        sessionText += `Project Description: ${innerData.projectDescription}`;
+      }
+
       const userQuery = `
 
 Continue the conversation accordingly to the Recent Chat History:
@@ -95,7 +130,7 @@ ${dataObject.aiFriend.name}: `;
               dataObject.user.knowledge_base || "",
             )
             .replace("{friendsSummary}", dataObject.friendsSummary)
-            .replace("{descriptionString}", sessionDescription)
+            .replace("{descriptionString}", sessionText)
             .replace("{lastConversations}", lastConversation.join("\n"))
             .replace("{relevantContext}", relevantContext)
             .replace("{aiFriendName}", dataObject.aiFriend.name);
@@ -104,7 +139,7 @@ ${dataObject.aiFriend.name}: `;
         case "StoryMode": {
           systemPrompt = systemPromptStoryMode(modeData)
             .replace("{aiFriendName}", dataObject.aiFriend.name)
-            .replace("{descriptionString}", sessionDescription)
+            .replace("{descriptionString}", sessionText)
             .replace("{friendsSummary}", dataObject.friendsSummary)
             .replace("{friendsMemory}", retrieveFriendsMemory)
             .replace("{lastConversations}", lastConversation.join("\n"))
@@ -115,7 +150,7 @@ ${dataObject.aiFriend.name}: `;
         case "ResearchCreateMode": {
           systemPrompt = systemPromptResearchCreateMode(modeData)
             .replace("{aiFriendName}", dataObject.aiFriend.name)
-            .replace("{descriptionString}", sessionDescription)
+            .replace("{descriptionString}", sessionText)
             .replace("{aiFriendPersona}", dataObject.aiFriend.persona || "")
             .replace("{aiFriendAbout}", dataObject.aiFriend.about || "")
             .replace(
