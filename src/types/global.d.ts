@@ -25,6 +25,7 @@ declare global {
   interface RouterData {
     user: User;
     activeFriends: AiFriend[];
+    friendsSummary: string;
   }
 
   interface FriendsInfo {

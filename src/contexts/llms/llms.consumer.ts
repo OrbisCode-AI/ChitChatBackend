@@ -190,6 +190,7 @@ ${dataObject.aiFriend.name}: `;
       message,
       routerData.user,
       routerData.activeFriends,
+      routerData.friendsSummary,
     );
   }
 
@@ -197,6 +198,7 @@ ${dataObject.aiFriend.name}: `;
     message: string,
     user: User,
     activeFriends: AiFriend[],
+    friendsSummary: string,
   ): Promise<
     { friends: string[]; mode: string; webContent?: string } | undefined
   > {
@@ -206,19 +208,8 @@ ${dataObject.aiFriend.name}: `;
 User: ${user.name}
 User persona: ${user.persona}
 
-Active Friends:
-${activeFriends.map((f) => `- ${f.name} (${f.persona})`).join("\n")}
-
 Friend Profiles:
-${JSON.stringify(
-  activeFriends.map((f) => ({
-    name: f.name,
-    persona: f.persona,
-    about: f.about,
-  })),
-  undefined,
-  2,
-)}
+${friendsSummary}
 
 Previous Conversation History and Latest Message: ${message}
 
@@ -228,7 +219,7 @@ Based on the provided information:
    - Internet research or fact-checking
    - General knowledge or personal interaction
 
-2. Select 1-3 most appropriate friends to respond by considering:
+2. Select 1-4 most appropriate friends to respond by considering:
    - Message content and topic
    - User's profile and interests
    - Friends' personalities and expertise

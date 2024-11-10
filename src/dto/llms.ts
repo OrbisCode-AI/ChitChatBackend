@@ -166,6 +166,14 @@ class RouterData {
   @IsArray()
   @IsNotEmpty()
   activeFriends!: AiFriend[];
+
+  @ApiProperty({
+    description: "Summary of the friendship",
+    example: "A friendly AI and a human user",
+  })
+  @IsString()
+  @IsNotEmpty()
+  friendsSummary!: string;
 }
 
 export class AiFriendResponseDto {
