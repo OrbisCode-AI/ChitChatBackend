@@ -47,13 +47,16 @@ export async function unifyAgentChat(
   });
 
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+    // throw new Error(`HTTP error! status: ${response.status}`);
+    return "I am busy now, I will respond later.";
   }
 
   const data = (await response.json()) as {
     choices: Array<{ message: { content: string } }>;
   };
-  return data.choices[0].message.content;
+  return (
+    data.choices[0].message.content || "I am busy now, I will respond later."
+  );
 }
 
 export async function unifyAgentChatWithResponseFormat(
