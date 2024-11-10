@@ -148,6 +148,17 @@ ${dataObject.aiFriend.name}: `;
         }
       }
 
+      // Parse name prefix from response if present
+      if (response) {
+        // Example: "Aman: Hi everyone i love you all : i miss you all"
+        // Should become: "Hi everyone i love you all : i miss you all"
+        const colonIndex = response.indexOf(":");
+        if (colonIndex > 0 && colonIndex < 13) {
+          // Name prefix should be reasonably short (less than 13 chars)
+          response = response.slice(colonIndex + 1).trim();
+        }
+      }
+
       // Store the response in vector DB if we have a valid response
       if (response && response !== "I am busy now, I will respond later.") {
         const message = `${dataObject.aiFriend.name}: ${response}`;
@@ -205,41 +216,18 @@ ${dataObject.aiFriend.name}: `;
     const systemPrompt = systemPromptMessageRoute;
 
     const userPrompt = `
-User: ${user.name}
-User persona: ${user.persona}
 
-Friend Profiles:
+<Friends details>
 ${friendsSummary}
+</Friends details>
 
-Previous Conversation History and Latest Message: ${message}
+<List of friends names who are active and can use in respond>
+${activeFriends.map((friend) => `${friend.name}`).join("\n")}
+</List of friends names who are active and can use in respond>
 
-Based on the provided information:
-1. Analyze the message content to determine if it requires:
-   - Current events or real-time information
-   - Internet research or fact-checking
-   - General knowledge or personal interaction
+Previous Conversation History and Latest Message by ${user.name} -> ${message}
 
-2. Select 1-4 most appropriate friends to respond by considering:
-   - Message content and topic
-   - User's profile and interests
-   - Friends' personalities and expertise
-   - How well each friend could address the specific query
-
-3. Choose response mode:
-   - Use 'web' mode if the message:
-     * Asks about current events/news
-     * Requires fact-checking
-     * Needs up-to-date information
-     * Requests research-based answers
-   - Use 'normal' mode if the message:
-     * Is conversational/social
-     * Seeks opinions/perspectives
-     * Involves personal interaction
-     * Can be answered with existing knowledge
-
-Provide your response as an object with:
-- 'friends': Array of 1-3 friend names best suited to respond
-- 'mode': Either 'normal' or 'web' based on message requirements`;
+`;
 
     this.logger.log("userPrompt", userPrompt);
     this.logger.log("systemPrompt", systemPrompt);
